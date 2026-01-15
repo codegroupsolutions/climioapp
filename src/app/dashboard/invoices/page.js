@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 
 export default function InvoicesPage() {
   const router = useRouter()
@@ -111,20 +112,23 @@ export default function InvoicesPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1 px-3 py-2 border border-gray-300 focus:outline-none focus:border-black"
           />
-          <select
+          <SearchableSelect
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value)
               setPagination(prev => ({ ...prev, page: 1 }))
             }}
-            className="px-3 py-2 border border-gray-300 focus:outline-none focus:border-black"
-          >
-            <option value="">Todos los estados</option>
-            <option value="PENDING">Pendiente</option>
-            <option value="PAID">Pagada</option>
-            <option value="OVERDUE">Vencida</option>
-            <option value="CANCELLED">Cancelada</option>
-          </select>
+            options={[
+              { value: '', label: 'Todos los estados' },
+              { value: 'PENDING', label: 'Pendiente' },
+              { value: 'PAID', label: 'Pagada' },
+              { value: 'OVERDUE', label: 'Vencida' },
+              { value: 'CANCELLED', label: 'Cancelada' }
+            ]}
+            placeholder="Todos los estados"
+            searchPlaceholder="Buscar estado..."
+            className="w-48"
+          />
           <button
             type="submit"
             className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors"

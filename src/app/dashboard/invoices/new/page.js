@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { formatDateForInput, parseInputDate, getTodayInputDate, addDaysToInputDate } from '@/utils/dateUtils'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 
 export default function NewInvoicePage() {
   const router = useRouter()
@@ -322,24 +323,21 @@ export default function NewInvoicePage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Cliente *
               </label>
-              <select
+              <SearchableSelect
                 name="clientId"
                 value={formData.clientId}
                 onChange={handleChange}
+                options={clients}
+                placeholder="Seleccionar cliente"
+                searchPlaceholder="Buscar cliente..."
+                noResultsText="No se encontraron clientes"
                 required
                 disabled={!!quote}
-                className={`w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-black ${
-                  quote ? 'bg-gray-50' : ''
-                }`}
-              >
-                <option value="">Seleccionar cliente</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.firstName} {client.lastName}
-                    {client.companyName && ` - ${client.companyName}`}
-                  </option>
-                ))}
-              </select>
+                getOptionValue={(client) => client.id}
+                getOptionLabel={(client) =>
+                  `${client.firstName} ${client.lastName}${client.companyName ? ` - ${client.companyName}` : ''}`
+                }
+              />
               {quote && (
                 <p className="mt-1 text-xs text-gray-500">
                   Cliente heredado de la cotización
@@ -350,16 +348,18 @@ export default function NewInvoicePage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tipo de factura *
               </label>
-              <select
+              <SearchableSelect
                 name="type"
                 value={formData.type}
                 onChange={handleChange}
+                options={[
+                  { value: 'SERVICE', label: 'Servicio' },
+                  { value: 'EQUIPMENT', label: 'Equipo' }
+                ]}
+                placeholder="Seleccionar tipo"
+                searchPlaceholder="Buscar tipo..."
                 required
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-black"
-              >
-                <option value="SERVICE">Servicio</option>
-                <option value="EQUIPMENT">Equipo</option>
-              </select>
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -438,14 +438,16 @@ export default function NewInvoicePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Tipo
                     </label>
-                    <select
+                    <SearchableSelect
                       value={item.type || 'service'}
                       onChange={(e) => handleItemChange(index, 'type', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-black text-sm"
-                    >
-                      <option value="service">Servicio</option>
-                      <option value="product">Producto</option>
-                    </select>
+                      options={[
+                        { value: 'service', label: 'Servicio' },
+                        { value: 'product', label: 'Producto' }
+                      ]}
+                      placeholder="Seleccionar tipo"
+                      searchPlaceholder="Buscar..."
+                    />
                   </div>
 
                   {/* Product selector - only show if type is product */}
@@ -454,18 +456,16 @@ export default function NewInvoicePage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Producto
                       </label>
-                      <select
+                      <SearchableSelect
                         value={item.productId || ''}
                         onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-black text-sm"
-                      >
-                        <option value="">Seleccionar producto</option>
-                        {products.map(product => (
-                          <option key={product.id} value={product.id}>
-                            {product.name} - {formatCurrency(product.price)}
-                          </option>
-                        ))}
-                      </select>
+                        options={products}
+                        placeholder="Seleccionar producto"
+                        searchPlaceholder="Buscar producto..."
+                        noResultsText="No se encontraron productos"
+                        getOptionValue={(product) => product.id}
+                        getOptionLabel={(product) => `${product.name} - ${formatCurrency(product.price)}`}
+                      />
                     </div>
                   ) : null}
 

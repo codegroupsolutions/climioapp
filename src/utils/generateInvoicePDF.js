@@ -44,17 +44,21 @@ export async function generateInvoicePDF(invoice) {
     throw new Error('No invoice data provided')
   }
 
-  const doc = new jsPDF()
+  const doc = new jsPDF({
+    format: 'letter',
+    orientation: 'portrait',
+    unit: 'mm'
+  })
   const pageWidth = doc.internal.pageSize.width
   const pageHeight = doc.internal.pageSize.height
 
   // ========== HEADER CON CURVA DECORATIVA ==========
   drawTopDecoration(doc, pageWidth)
 
-  // Logo y nombre de empresa (derecha)
-  let logoEndY = 35
-  const logoX = pageWidth - 60
+  // Posicion Y dinamica - empieza despues de la decoracion superior
+  let yPos = 20
 
+  // Logo y nombre de empresa (derecha)
   if (invoice.company?.logo) {
     try {
       const apiResponse = await fetch(`/api/image-to-base64?url=${encodeURIComponent(invoice.company.logo)}`)
@@ -87,17 +91,20 @@ export async function generateInvoicePDF(invoice) {
 
         // Logo alineado a la derecha (PNG para mantener transparencia)
         doc.addImage(compressedImage, 'PNG', pageWidth - 10 - logoWidth, 18, logoWidth, logoHeight)
-        logoEndY = 18 + logoHeight + 3
+
+        // Actualizar yPos si el logo es mas alto
+        const logoEndY = 18 + logoHeight + 5
+        yPos = Math.max(yPos, logoEndY)
       }
     } catch (error) {
       console.error('Error loading company logo:', error)
     }
   }
 
+  // Asegurar espacio minimo despues del header
+  yPos = Math.max(yPos, 35)
 
   // ========== DATOS DEL CLIENTE (izquierda) ==========
-  let yPos = 50
-
   doc.setFontSize(12)
   doc.setFont(undefined, 'bold')
   doc.setTextColor(...DARK_GRAY)
@@ -194,11 +201,13 @@ export async function generateInvoicePDF(invoice) {
       ])
     : [['Sin items', '', '', '']]
 
-  autoTable(doc, {
+  const tableResult = autoTable(doc, {
     startY: yPos,
     head: [['Concepto', 'Cantidad', 'Precio', 'Total']],
     body: tableData,
     theme: 'plain',
+    margin: { left: 20, right: 20 },
+    tableWidth: 'auto',
     headStyles: {
       fillColor: DARK_GRAY,
       textColor: [255, 255, 255],
@@ -215,10 +224,10 @@ export async function generateInvoicePDF(invoice) {
       fillColor: [250, 250, 250],
     },
     columnStyles: {
-      0: { cellWidth: 85, halign: 'left' },
-      1: { cellWidth: 30, halign: 'center' },
-      2: { cellWidth: 35, halign: 'right' },
-      3: { cellWidth: 35, halign: 'right' },
+      0: { cellWidth: 'auto', halign: 'left' },
+      1: { cellWidth: 25, halign: 'center' },
+      2: { cellWidth: 30, halign: 'right' },
+      3: { cellWidth: 30, halign: 'right' },
     },
     styles: {
       cellPadding: 4,
@@ -228,14 +237,16 @@ export async function generateInvoicePDF(invoice) {
   })
 
   // ========== SECCION DE TOTALES Y NOTAS ==========
-  const finalY = doc.previousAutoTable ? doc.previousAutoTable.finalY + 10 : 150
+  // Obtener posicion final de la tabla (compatible con diferentes versiones de jspdf-autotable)
+  const tableFinalY = tableResult?.finalY || doc.lastAutoTable?.finalY || doc.previousAutoTable?.finalY || yPos + 50
+  yPos = tableFinalY + 10
 
   // Notas y forma de pago (izquierda)
   doc.setFontSize(9)
   doc.setFont(undefined, 'normal')
   doc.setTextColor(0, 0, 0)
 
-  let leftColumnY = finalY
+  let leftColumnY = yPos
 
   // Forma de pago (si hay pagos registrados)
   if (invoice.payments && invoice.payments.length > 0) {
@@ -264,13 +275,14 @@ export async function generateInvoicePDF(invoice) {
       year: 'numeric',
     })
     doc.text(`Vencimiento: ${dueDate}`, 20, leftColumnY)
+    leftColumnY += 6
   }
 
   // Totales (derecha)
   doc.setFontSize(10)
   const totalsX = 140
   const totalsValueX = pageWidth - 20
-  let totalsY = finalY
+  let totalsY = yPos
 
   // Subtotal
   doc.setFont(undefined, 'normal')
@@ -300,10 +312,11 @@ export async function generateInvoicePDF(invoice) {
   doc.setFontSize(12)
   doc.text('Total', totalsX, totalsY + 4)
   doc.text(formatCurrency(invoice.total || 0), totalsValueX, totalsY + 4, { align: 'right' })
+  totalsY += 4
 
   // Pagado y Saldo (si aplica)
   if (invoice.status !== 'CANCELLED' && invoice.paidAmount > 0) {
-    totalsY += 12
+    totalsY += 8
     doc.setFont(undefined, 'normal')
     doc.setFontSize(10)
     doc.text('Pagado', totalsX, totalsY)
@@ -323,9 +336,33 @@ export async function generateInvoicePDF(invoice) {
   }
 
   // ========== FOOTER ==========
-  // Informacion de la empresa emisora (izquierda)
-  const footerY = pageHeight - 45
+  // Calcular donde termina el contenido
+  const contentEndY = Math.max(leftColumnY, totalsY) + 15
 
+  // Footer dinamico - se posiciona despues del contenido con espacio minimo
+  // Si hay espacio, usa la parte inferior de la pagina; si no, continua despues del contenido
+  const minFooterSpace = 50 // Espacio minimo necesario para el footer
+  const footerY = Math.max(contentEndY, pageHeight - minFooterSpace)
+
+  // Si el footer excede la pagina, agregar nueva pagina
+  if (footerY > pageHeight - 20) {
+    doc.addPage()
+    drawBottomDecoration(doc, pageWidth, pageHeight)
+
+    // Footer en la nueva pagina
+    const newPageFooterY = 20
+    drawFooterContent(doc, invoice, pageWidth, pageHeight, newPageFooterY)
+  } else {
+    // Footer en la misma pagina
+    drawFooterContent(doc, invoice, pageWidth, pageHeight, footerY)
+    drawBottomDecoration(doc, pageWidth, pageHeight)
+  }
+
+  return doc
+}
+
+// Funcion para dibujar el contenido del footer
+function drawFooterContent(doc, invoice, pageWidth, pageHeight, footerY) {
   doc.setFontSize(9)
   doc.setFont(undefined, 'bold')
   doc.setTextColor(0, 0, 0)
@@ -364,11 +401,6 @@ export async function generateInvoicePDF(invoice) {
   doc.setFontSize(10)
   doc.setFont(undefined, 'italic')
   doc.text('Gracias por su preferencia', pageWidth / 2, pageHeight - 25, { align: 'center' })
-
-  // Curva decorativa inferior
-  drawBottomDecoration(doc, pageWidth, pageHeight)
-
-  return doc
 }
 
 // Funcion para dibujar la decoracion superior

@@ -56,7 +56,11 @@ export default function ReportsPage() {
   }
 
   const exportToPDF = () => {
-    const doc = new jsPDF()
+    const doc = new jsPDF({
+      format: 'letter',
+      orientation: 'portrait',
+      unit: 'mm'
+    })
     const reportTitle = reportTypes.find(r => r.id === activeReport)?.name || 'Reporte'
 
     // Title

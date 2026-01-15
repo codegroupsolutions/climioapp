@@ -6,7 +6,11 @@ export async function generateQuotePDF(quote) {
     throw new Error('No quote data provided')
   }
 
-  const doc = new jsPDF()
+  const doc = new jsPDF({
+    format: 'letter',
+    orientation: 'portrait',
+    unit: 'mm'
+  })
 
   // Company header
   let headerStartY = 20
