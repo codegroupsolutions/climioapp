@@ -87,22 +87,23 @@ enum PaymentStatus {
 
 // Models
 model Company {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  phone     String?
-  address   String?
-  city      String?
-  state     String?
-  zipCode   String?
-  country   String   @default("PR")
-  logo      String?
-  taxId     String?
-  website   String?
-  taxRate   Float    @default(11.5) // Default 11.5% IVU for Puerto Rico
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  active    Boolean  @default(true)
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  phone         String?
+  address       String?
+  postalAddress String?
+  city          String?
+  state         String?
+  zipCode       String?
+  country       String   @default("PR")
+  logo          String?
+  taxId         String?
+  website       String?
+  taxRate       Float    @default(11.5) // Default 11.5% IVU for Puerto Rico
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  active        Boolean  @default(true)
 
   // Subscription fields
   subscriptionPlanId    String?

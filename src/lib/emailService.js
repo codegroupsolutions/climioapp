@@ -60,12 +60,17 @@ const createTransporter = async () => {
 };
 
 // Base email sending function
-const sendEmail = async ({ to, subject, html, text, attachments = [] }) => {
+const sendEmail = async ({ to, subject, html, text, attachments = [], cc = [] }) => {
   let transporter = null;
 
   try {
     // Create new transporter for each request
     transporter = await createTransporter();
+
+    // Filter and validate CC emails
+    const validCC = cc && Array.isArray(cc) 
+      ? cc.filter(email => email && typeof email === 'string' && email.trim().length > 0)
+      : [];
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@codegroupsolutions.com',
@@ -79,6 +84,20 @@ const sendEmail = async ({ to, subject, html, text, attachments = [] }) => {
         'X-Mailer': 'nodemailer'
       }
     };
+
+    // Add CC only if there are valid emails
+    if (validCC.length > 0) {
+      mailOptions.cc = validCC;
+    }
+
+    // Log email details for debugging
+    console.log('Sending email:', {
+      to,
+      cc: validCC.length > 0 ? validCC : 'none',
+      subject,
+      hasAttachments: attachments.length > 0,
+      mailOptionsKeys: Object.keys(mailOptions)
+    });
 
     // Verify transporter connection in development
     if (process.env.NODE_ENV === 'development') {
@@ -422,7 +441,7 @@ const sendWelcomeEmail = async (email, companyName, adminName) => {
   });
 };
 
-const sendInvoiceEmail = async (email, invoiceNumber, clientName, amount, pdfBuffer = null) => {
+const sendInvoiceEmail = async (email, invoiceNumber, clientName, amount, pdfBuffer = null, cc = []) => {
   const html = emailTemplates.baseTemplate(emailTemplates.invoice(invoiceNumber, clientName, amount));
   const text = `Estimado/a ${clientName}, tiene una nueva factura #${invoiceNumber} por $${amount}.`;
 
@@ -432,16 +451,24 @@ const sendInvoiceEmail = async (email, invoiceNumber, clientName, amount, pdfBuf
     contentType: 'application/pdf'
   }] : [];
 
+  console.log('sendInvoiceEmail called with:', {
+    to: email,
+    cc: cc,
+    invoiceNumber,
+    hasPDF: !!pdfBuffer
+  });
+
   return sendEmail({
     to: email,
     subject: `Factura #${invoiceNumber}`,
     html,
     text,
-    attachments
+    attachments,
+    cc: Array.isArray(cc) ? cc : []
   });
 };
 
-const sendQuoteEmail = async (email, quoteNumber, clientName, total, validUntil, items = [], pdfBuffer = null) => {
+const sendQuoteEmail = async (email, quoteNumber, clientName, total, validUntil, items = [], pdfBuffer = null, cc = []) => {
   const html = emailTemplates.baseTemplate(emailTemplates.quote(quoteNumber, clientName, total, validUntil, items));
   const text = `Estimado/a ${clientName}, adjunto encontrará la cotización #${quoteNumber} por un total de $${total}. Válida hasta ${validUntil}.`;
 
@@ -451,12 +478,20 @@ const sendQuoteEmail = async (email, quoteNumber, clientName, total, validUntil,
     contentType: 'application/pdf'
   }] : [];
 
+  console.log('sendQuoteEmail called with:', {
+    to: email,
+    cc: cc,
+    quoteNumber,
+    hasPDF: !!pdfBuffer
+  });
+
   return sendEmail({
     to: email,
     subject: `Cotización #${quoteNumber}`,
     html,
     text,
-    attachments
+    attachments,
+    cc: Array.isArray(cc) ? cc : []
   });
 };
 

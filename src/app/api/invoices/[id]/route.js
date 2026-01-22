@@ -29,6 +29,7 @@ export async function GET(request, context) {
             email: true,
             phone: true,
             address: true,
+            postalAddress: true,
             city: true,
             state: true,
             zipCode: true,

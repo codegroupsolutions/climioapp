@@ -90,6 +90,7 @@ export async function PUT(request) {
       data: {
         name: body.name,
         address: body.address || null,
+        postalAddress: body.postalAddress || null,
         phone: body.phone || null,
         email: body.email || null,
         website: body.website || null,

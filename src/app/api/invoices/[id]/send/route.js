@@ -65,6 +65,23 @@ export async function POST(request, context) {
       );
     }
 
+    // Prepare CC emails: user email and company email
+    const ccEmails = [];
+    if (user.email) {
+      ccEmails.push(user.email);
+    }
+    if (invoice.company.email && invoice.company.email !== user.email) {
+      ccEmails.push(invoice.company.email);
+    }
+
+    // Log for debugging
+    console.log('Invoice email recipients:', {
+      to: recipientEmail,
+      cc: ccEmails,
+      userEmail: user.email,
+      companyEmail: invoice.company.email
+    });
+
     // Generate PDF
     let pdfBuffer = null;
     try {
@@ -83,7 +100,8 @@ export async function POST(request, context) {
       invoice.number,
       clientName,
       invoice.total.toFixed(2),
-      pdfBuffer
+      pdfBuffer,
+      ccEmails
     );
 
     if (!emailResult.success) {
@@ -93,10 +111,16 @@ export async function POST(request, context) {
       );
     }
 
+    const ccMessage = ccEmails.length > 0 
+      ? ` Copias enviadas a: ${ccEmails.join(', ')}`
+      : '';
+
     return NextResponse.json({
       success: true,
-      message: `Factura enviada exitosamente a ${recipientEmail}`,
+      message: `Factura enviada exitosamente a ${recipientEmail}.${ccMessage}`,
       messageId: emailResult.messageId,
+      sentTo: recipientEmail,
+      cc: ccEmails
     });
   } catch (error) {
     console.error("Error sending invoice:", error);

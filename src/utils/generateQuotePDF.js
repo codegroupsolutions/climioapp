@@ -251,86 +251,100 @@ export async function generateQuotePDF(quote) {
     tableLineWidth: 0.5,
   })
 
-  // ========== SECCION DE TOTALES Y NOTAS ==========
+  // ========== SECCION DE TOTALES, NOTAS Y FOOTER (SECUENCIAL) ==========
   // Obtener posicion final de la tabla (compatible con diferentes versiones de jspdf-autotable)
   const tableFinalY = tableResult?.finalY || doc.lastAutoTable?.finalY || doc.previousAutoTable?.finalY || yPos + 50
-  yPos = tableFinalY + 10
+  yPos = tableFinalY + 15
 
-  // Notas (izquierda)
-  doc.setFontSize(9)
-  doc.setFont(undefined, 'normal')
-  doc.setTextColor(0, 0, 0)
-
-  let leftColumnY = yPos
-
-  // Notas
-  if (quote.notes) {
-    doc.setFont(undefined, 'bold')
-    doc.text('Notas:', 20, leftColumnY)
-    doc.setFont(undefined, 'normal')
-    leftColumnY += 5
-
-    const splitNotes = doc.splitTextToSize(quote.notes, 100)
-    doc.text(splitNotes, 20, leftColumnY)
-    leftColumnY += splitNotes.length * 4
+  // Verificar si necesitamos nueva pagina antes de continuar
+  if (yPos > pageHeight - 80) {
+    doc.addPage()
+    yPos = 20
   }
 
-  // Totales (derecha)
+  // Totales (secuencial, alineados a la derecha)
   doc.setFontSize(10)
   const totalsX = 140
   const totalsValueX = pageWidth - 20
-  let totalsY = yPos
 
   // Subtotal
   doc.setFont(undefined, 'normal')
-  doc.text('Subtotal', totalsX, totalsY)
-  doc.text(formatCurrency(quote.subtotal || 0), totalsValueX, totalsY, { align: 'right' })
-  totalsY += 7
+  doc.text('Subtotal', totalsX, yPos)
+  doc.text(formatCurrency(quote.subtotal || 0), totalsValueX, yPos, { align: 'right' })
+  yPos += 7
 
   // Descuento (si aplica)
   if ((quote.discount || 0) > 0) {
-    doc.text('Descuento', totalsX, totalsY)
-    doc.text(`-${formatCurrency(quote.discount || 0)}`, totalsValueX, totalsY, { align: 'right' })
-    totalsY += 7
+    doc.text('Descuento', totalsX, yPos)
+    doc.text(`-${formatCurrency(quote.discount || 0)}`, totalsValueX, yPos, { align: 'right' })
+    yPos += 7
   }
 
   // IVU
-  doc.text('IVU 11.5%', totalsX, totalsY)
-  doc.text(formatCurrency(quote.tax || 0), totalsValueX, totalsY, { align: 'right' })
-  totalsY += 8
+  doc.text('IVU 11.5%', totalsX, yPos)
+  doc.text(formatCurrency(quote.tax || 0), totalsValueX, yPos, { align: 'right' })
+  yPos += 8
 
   // Linea separadora antes del total
   doc.setDrawColor(...LIGHT_GRAY)
   doc.setLineWidth(0.5)
-  doc.line(totalsX, totalsY - 2, totalsValueX, totalsY - 2)
+  doc.line(totalsX, yPos - 2, totalsValueX, yPos - 2)
 
   // Total
   doc.setFont(undefined, 'bold')
   doc.setFontSize(12)
-  doc.text('Total', totalsX, totalsY + 4)
-  doc.text(formatCurrency(quote.total || 0), totalsValueX, totalsY + 4, { align: 'right' })
-  totalsY += 4
+  doc.text('Total', totalsX, yPos + 4)
+  doc.text(formatCurrency(quote.total || 0), totalsValueX, yPos + 4, { align: 'right' })
+  yPos += 12
+
+  // Espacio antes de notas
+  yPos += 10
+
+  // Verificar si necesitamos nueva pagina para las notas
+  if (yPos > pageHeight - 60) {
+    doc.addPage()
+    yPos = 20
+  }
+
+  // Notas (después de totales, completo)
+  doc.setFontSize(9)
+  doc.setFont(undefined, 'normal')
+  doc.setTextColor(0, 0, 0)
+
+  // Notas
+  if (quote.notes) {
+    doc.setFont(undefined, 'bold')
+    doc.text('Notas:', 20, yPos)
+    doc.setFont(undefined, 'normal')
+    yPos += 5
+
+    // Dividir el texto en múltiples líneas según el ancho disponible
+    const maxWidth = pageWidth - 40 // Margen izquierdo y derecho
+    const splitNotes = doc.splitTextToSize(quote.notes, maxWidth)
+    doc.text(splitNotes, 20, yPos)
+    yPos += splitNotes.length * 4 + 5
+  }
+
+  // Espacio antes del footer
+  yPos += 15
 
   // ========== FOOTER ==========
   // Calcular donde termina el contenido
-  const contentEndY = Math.max(leftColumnY, totalsY) + 15
+  const contentEndY = yPos
 
-  // Footer dinamico - se posiciona despues del contenido con espacio minimo
+  // Footer dinamico - se posiciona despues del contenido
   const minFooterSpace = 50
-  const footerY = Math.max(contentEndY, pageHeight - minFooterSpace)
+  let footerY = contentEndY
 
   // Si el footer excede la pagina, agregar nueva pagina
-  if (footerY > pageHeight - 20) {
+  if (footerY > pageHeight - minFooterSpace) {
     doc.addPage()
-    // Primero la decoracion, luego el texto encima
-    drawBottomDecoration(doc, pageWidth, pageHeight)
-    const newPageFooterY = 20
-    drawFooterContent(doc, quote, pageWidth, pageHeight, newPageFooterY)
-  } else {
-    // Primero la decoracion, luego el texto encima
-    drawBottomDecoration(doc, pageWidth, pageHeight)
-    drawFooterContent(doc, quote, pageWidth, pageHeight, footerY)
+    footerY = 20
   }
+
+  // Dibujar decoracion y contenido del footer
+  drawBottomDecoration(doc, pageWidth, pageHeight)
+  drawFooterContent(doc, quote, pageWidth, pageHeight, footerY)
 
   return doc
 }
@@ -349,7 +363,11 @@ function drawFooterContent(doc, quote, pageWidth, pageHeight, footerY) {
   let companyInfoY = footerY + 5
 
   if (quote.company?.address) {
-    doc.text(`Direccion: ${quote.company.address}`, 20, companyInfoY)
+    doc.text(`Direccion Fisica: ${quote.company.address}`, 20, companyInfoY)
+    companyInfoY += 4
+  }
+  if (quote.company?.postalAddress) {
+    doc.text(`Direccion Postal: ${quote.company.postalAddress}`, 20, companyInfoY)
     companyInfoY += 4
   }
   if (quote.company?.email) {
@@ -358,6 +376,7 @@ function drawFooterContent(doc, quote, pageWidth, pageHeight, footerY) {
   }
   if (quote.company?.phone) {
     doc.text(`Telefono: ${quote.company.phone}`, 20, companyInfoY)
+    companyInfoY += 4
   }
 
   // Generado por (derecha)
@@ -366,10 +385,14 @@ function drawFooterContent(doc, quote, pageWidth, pageHeight, footerY) {
     doc.text(`Generado por: ${quote.user.firstName || ''} ${quote.user.lastName || ''}`, pageWidth - 20, footerY, { align: 'right' })
   }
 
-  // Mensaje de agradecimiento (centrado, por encima de la decoracion)
+  // Mensaje de agradecimiento (centrado, por debajo de toda la informacion de la empresa)
+  // Calcular la posicion Y mas baja entre la informacion de la empresa y el lado derecho
+  const maxInfoY = Math.max(companyInfoY, footerY + 5)
+  const thanksY = maxInfoY + 8 // Espacio adicional antes del mensaje
+  
   doc.setFontSize(10)
   doc.setFont(undefined, 'italic')
-  doc.text('Gracias por su preferencia', pageWidth / 2, pageHeight - 45, { align: 'center' })
+  doc.text('Gracias por su preferencia', pageWidth / 2, thanksY, { align: 'center' })
 }
 
 // Funcion para dibujar la decoracion superior

@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [company, setCompany] = useState({
     name: '',
     address: '',
+    postalAddress: '',
     phone: '',
     email: '',
     website: '',
@@ -75,6 +76,7 @@ export default function SettingsPage() {
       setCompany({
         name: data.name || '',
         address: data.address || '',
+        postalAddress: data.postalAddress || '',
         phone: data.phone || '',
         email: data.email || '',
         website: data.website || '',
@@ -362,7 +364,7 @@ export default function SettingsPage() {
 
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Dirección
+            Dirección Física
           </label>
           <textarea
             value={company.address}
@@ -370,6 +372,19 @@ export default function SettingsPage() {
             rows="3"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             placeholder="Calle, Número, Colonia, Ciudad, Estado, CP"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Dirección Postal
+          </label>
+          <textarea
+            value={company.postalAddress}
+            onChange={(e) => setCompany({ ...company, postalAddress: e.target.value })}
+            rows="3"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            placeholder="Apartado Postal, Casilla, o dirección para correspondencia"
           />
         </div>
 

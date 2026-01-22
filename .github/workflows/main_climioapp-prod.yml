@@ -11,6 +11,7 @@ on:
 
 jobs:
   build:
+    environment: production
     runs-on: ubuntu-latest
     permissions:
       contents: read #This is required for actions/checkout
@@ -23,17 +24,58 @@ jobs:
         with:
           node-version: '24.x'
 
-      - name: npm install, build, and test
+      - name: npm install
         run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+          npm ci
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Prisma db push
+        run: |
+          npx prisma db push
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NODE_ENV: production
+
+      - name: Prisma generate
+        run: |
+          npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NODE_ENV: production
+
+      - name: Build Next.js app
+        run: |
+          npm run build
+        env:
+          NODE_ENV: production
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+
+      - name: Create build folder
+        run: |
+          mkdir -p build/.next/static build/public
+          cp -r .next/standalone/* build/
+          cp -r .next/static/* build/.next/static/
+          cp -r public/* build/public/
+          cp package.json build/
+          cp package-lock.json build/
+          cp next.config.mjs build/
+
+      - name: Create build zip
+        run: |
+          cd build
+          zip -r build.zip .
+
+      - name: List build folder
+        run: |
+          ls -la build
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: build/build.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -44,6 +86,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
+
+      - name: Unzip artifact to root
+        run: |
+          unzip build.zip
       
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp

@@ -58,6 +58,23 @@ export async function POST(request, context) {
       );
     }
 
+    // Prepare CC emails: user email and company email
+    const ccEmails = [];
+    if (user.email) {
+      ccEmails.push(user.email);
+    }
+    if (quote.company.email && quote.company.email !== user.email) {
+      ccEmails.push(quote.company.email);
+    }
+
+    // Log for debugging
+    console.log('Quote email recipients:', {
+      to: recipientEmail,
+      cc: ccEmails,
+      userEmail: user.email,
+      companyEmail: quote.company.email
+    });
+
     // Format items for email template
     const formattedItems = quote.items.map(item => ({
       description: item.description,
@@ -88,7 +105,8 @@ export async function POST(request, context) {
       quote.total.toFixed(2),
       new Date(quote.validUntil).toLocaleDateString('es-PR'),
       formattedItems,
-      pdfBuffer
+      pdfBuffer,
+      ccEmails
     );
 
     if (!emailResult.success) {
@@ -106,10 +124,16 @@ export async function POST(request, context) {
       });
     }
 
+    const ccMessage = ccEmails.length > 0 
+      ? ` Copias enviadas a: ${ccEmails.join(', ')}`
+      : '';
+
     return NextResponse.json({
       success: true,
-      message: `Cotización enviada exitosamente a ${recipientEmail}`,
+      message: `Cotización enviada exitosamente a ${recipientEmail}.${ccMessage}`,
       messageId: emailResult.messageId,
+      sentTo: recipientEmail,
+      cc: ccEmails
     });
   } catch (error) {
     console.error("Error sending quote:", error);

@@ -155,6 +155,18 @@ export async function generateInvoicePDF(invoice) {
   doc.text(`Factura: ${invoice.number}`, pageWidth - 20, yPos, { align: 'right' })
   yPos += 6
 
+  // Vencimiento (debajo de la fecha)
+  if (invoice.dueDate) {
+    const dueDate = new Date(invoice.dueDate).toLocaleDateString('es-PR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+    doc.setFont(undefined, 'normal')
+    doc.text(`Vencimiento: ${dueDate}`, 20, yPos)
+    yPos += 6
+  }
+
   const invoiceType = invoice.type === 'SERVICE' ? 'Servicio' : 'Equipo'
   doc.setFont(undefined, 'normal')
   doc.text(`Tipo: ${invoiceType}`, pageWidth - 20, yPos, { align: 'right' })
@@ -236,17 +248,86 @@ export async function generateInvoicePDF(invoice) {
     tableLineWidth: 0.5,
   })
 
-  // ========== SECCION DE TOTALES Y NOTAS ==========
+  // ========== SECCION DE TOTALES, NOTAS Y FOOTER (SECUENCIAL) ==========
   // Obtener posicion final de la tabla (compatible con diferentes versiones de jspdf-autotable)
   const tableFinalY = tableResult?.finalY || doc.lastAutoTable?.finalY || doc.previousAutoTable?.finalY || yPos + 50
-  yPos = tableFinalY + 10
+  yPos = tableFinalY + 15
 
-  // Notas y forma de pago (izquierda)
+  // Verificar si necesitamos nueva pagina antes de continuar
+  if (yPos > pageHeight - 80) {
+    doc.addPage()
+    yPos = 20
+  }
+
+  // Totales (secuencial, alineados a la derecha)
+  doc.setFontSize(10)
+  const totalsX = 140
+  const totalsValueX = pageWidth - 20
+
+  // Subtotal
+  doc.setFont(undefined, 'normal')
+  doc.text('Subtotal', totalsX, yPos)
+  doc.text(formatCurrency(invoice.subtotal || 0), totalsValueX, yPos, { align: 'right' })
+  yPos += 7
+
+  // Descuento (si aplica)
+  if ((invoice.discount || 0) > 0) {
+    doc.text('Descuento', totalsX, yPos)
+    doc.text(`-${formatCurrency(invoice.discount || 0)}`, totalsValueX, yPos, { align: 'right' })
+    yPos += 7
+  }
+
+  // IVU
+  doc.text('IVU 11.5%', totalsX, yPos)
+  doc.text(formatCurrency(invoice.tax || 0), totalsValueX, yPos, { align: 'right' })
+  yPos += 8
+
+  // Linea separadora antes del total
+  doc.setDrawColor(...LIGHT_GRAY)
+  doc.setLineWidth(0.5)
+  doc.line(totalsX, yPos - 2, totalsValueX, yPos - 2)
+
+  // Total
+  doc.setFont(undefined, 'bold')
+  doc.setFontSize(12)
+  doc.text('Total', totalsX, yPos + 4)
+  doc.text(formatCurrency(invoice.total || 0), totalsValueX, yPos + 4, { align: 'right' })
+  yPos += 12
+
+  // Pagado y Saldo (si aplica)
+  if (invoice.status !== 'CANCELLED' && invoice.paidAmount > 0) {
+    doc.setFont(undefined, 'normal')
+    doc.setFontSize(10)
+    doc.text('Pagado', totalsX, yPos)
+    doc.setTextColor(0, 128, 0)
+    doc.text(formatCurrency(invoice.paidAmount || 0), totalsValueX, yPos, { align: 'right' })
+    doc.setTextColor(0, 0, 0)
+    yPos += 7
+
+    const balance = (invoice.total || 0) - (invoice.paidAmount || 0)
+    if (balance > 0) {
+      doc.setFont(undefined, 'bold')
+      doc.text('Saldo', totalsX, yPos)
+      doc.setTextColor(255, 0, 0)
+      doc.text(formatCurrency(balance), totalsValueX, yPos, { align: 'right' })
+      doc.setTextColor(0, 0, 0)
+      yPos += 7
+    }
+  }
+
+  // Espacio antes de notas
+  yPos += 10
+
+  // Verificar si necesitamos nueva pagina para las notas
+  if (yPos > pageHeight - 60) {
+    doc.addPage()
+    yPos = 20
+  }
+
+  // Notas (después de totales, completo)
   doc.setFontSize(9)
   doc.setFont(undefined, 'normal')
   doc.setTextColor(0, 0, 0)
-
-  let leftColumnY = yPos
 
   // Forma de pago (si hay pagos registrados)
   if (invoice.payments && invoice.payments.length > 0) {
@@ -257,105 +338,44 @@ export async function generateInvoicePDF(invoice) {
       'TRANSFER': 'Transferencia',
       'STRIPE': 'Stripe'
     }
-    doc.text(`Forma de pago: ${paymentMethods[lastPayment.method] || lastPayment.method}`, 20, leftColumnY)
-    leftColumnY += 6
+    doc.text(`Forma de pago: ${paymentMethods[lastPayment.method] || lastPayment.method}`, 20, yPos)
+    yPos += 6
   }
 
-  // Notas
+  // Notas (completo, sin cortar)
   if (invoice.notes) {
-    doc.text(`Nota: ${invoice.notes.substring(0, 80)}${invoice.notes.length > 80 ? '...' : ''}`, 20, leftColumnY)
-    leftColumnY += 6
-  }
-
-  // Vencimiento
-  if (invoice.dueDate) {
-    const dueDate = new Date(invoice.dueDate).toLocaleDateString('es-PR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-    doc.text(`Vencimiento: ${dueDate}`, 20, leftColumnY)
-    leftColumnY += 6
-  }
-
-  // Totales (derecha)
-  doc.setFontSize(10)
-  const totalsX = 140
-  const totalsValueX = pageWidth - 20
-  let totalsY = yPos
-
-  // Subtotal
-  doc.setFont(undefined, 'normal')
-  doc.text('Subtotal', totalsX, totalsY)
-  doc.text(formatCurrency(invoice.subtotal || 0), totalsValueX, totalsY, { align: 'right' })
-  totalsY += 7
-
-  // Descuento (si aplica)
-  if ((invoice.discount || 0) > 0) {
-    doc.text('Descuento', totalsX, totalsY)
-    doc.text(`-${formatCurrency(invoice.discount || 0)}`, totalsValueX, totalsY, { align: 'right' })
-    totalsY += 7
-  }
-
-  // IVU
-  doc.text('IVU 11.5%', totalsX, totalsY)
-  doc.text(formatCurrency(invoice.tax || 0), totalsValueX, totalsY, { align: 'right' })
-  totalsY += 8
-
-  // Linea separadora antes del total
-  doc.setDrawColor(...LIGHT_GRAY)
-  doc.setLineWidth(0.5)
-  doc.line(totalsX, totalsY - 2, totalsValueX, totalsY - 2)
-
-  // Total
-  doc.setFont(undefined, 'bold')
-  doc.setFontSize(12)
-  doc.text('Total', totalsX, totalsY + 4)
-  doc.text(formatCurrency(invoice.total || 0), totalsValueX, totalsY + 4, { align: 'right' })
-  totalsY += 4
-
-  // Pagado y Saldo (si aplica)
-  if (invoice.status !== 'CANCELLED' && invoice.paidAmount > 0) {
-    totalsY += 8
+    doc.setFont(undefined, 'bold')
+    doc.text('Notas:', 20, yPos)
     doc.setFont(undefined, 'normal')
-    doc.setFontSize(10)
-    doc.text('Pagado', totalsX, totalsY)
-    doc.setTextColor(0, 128, 0)
-    doc.text(formatCurrency(invoice.paidAmount || 0), totalsValueX, totalsY, { align: 'right' })
-    doc.setTextColor(0, 0, 0)
+    yPos += 5
 
-    const balance = (invoice.total || 0) - (invoice.paidAmount || 0)
-    if (balance > 0) {
-      totalsY += 7
-      doc.setFont(undefined, 'bold')
-      doc.text('Saldo', totalsX, totalsY)
-      doc.setTextColor(255, 0, 0)
-      doc.text(formatCurrency(balance), totalsValueX, totalsY, { align: 'right' })
-      doc.setTextColor(0, 0, 0)
-    }
+    // Dividir el texto en múltiples líneas según el ancho disponible
+    const maxWidth = pageWidth - 40 // Margen izquierdo y derecho
+    const splitNotes = doc.splitTextToSize(invoice.notes, maxWidth)
+    doc.text(splitNotes, 20, yPos)
+    yPos += splitNotes.length * 4 + 5
   }
+
+  // Espacio antes del footer
+  yPos += 15
 
   // ========== FOOTER ==========
   // Calcular donde termina el contenido
-  const contentEndY = Math.max(leftColumnY, totalsY) + 15
+  const contentEndY = yPos
 
-  // Footer dinamico - se posiciona despues del contenido con espacio minimo
-  // Si hay espacio, usa la parte inferior de la pagina; si no, continua despues del contenido
+  // Footer dinamico - se posiciona despues del contenido
   const minFooterSpace = 50 // Espacio minimo necesario para el footer
-  const footerY = Math.max(contentEndY, pageHeight - minFooterSpace)
+  let footerY = contentEndY
 
   // Si el footer excede la pagina, agregar nueva pagina
-  if (footerY > pageHeight - 20) {
+  if (footerY > pageHeight - minFooterSpace) {
     doc.addPage()
-    // Primero la decoracion, luego el texto encima
-    drawBottomDecoration(doc, pageWidth, pageHeight)
-    const newPageFooterY = 20
-    drawFooterContent(doc, invoice, pageWidth, pageHeight, newPageFooterY)
-  } else {
-    // Primero la decoracion, luego el texto encima
-    drawBottomDecoration(doc, pageWidth, pageHeight)
-    drawFooterContent(doc, invoice, pageWidth, pageHeight, footerY)
+    footerY = 20
   }
+
+  // Dibujar decoracion y contenido del footer
+  drawBottomDecoration(doc, pageWidth, pageHeight)
+  drawFooterContent(doc, invoice, pageWidth, pageHeight, footerY)
 
   return doc
 }
@@ -374,7 +394,11 @@ function drawFooterContent(doc, invoice, pageWidth, pageHeight, footerY) {
   let companyInfoY = footerY + 5
 
   if (invoice.company?.address) {
-    doc.text(`Direccion: ${invoice.company.address}`, 20, companyInfoY)
+    doc.text(`Direccion Fisica: ${invoice.company.address}`, 20, companyInfoY)
+    companyInfoY += 4
+  }
+  if (invoice.company?.postalAddress) {
+    doc.text(`Direccion Postal: ${invoice.company.postalAddress}`, 20, companyInfoY)
     companyInfoY += 4
   }
   if (invoice.company?.email) {
@@ -383,6 +407,7 @@ function drawFooterContent(doc, invoice, pageWidth, pageHeight, footerY) {
   }
   if (invoice.company?.phone) {
     doc.text(`Telefono: ${invoice.company.phone}`, 20, companyInfoY)
+    companyInfoY += 4
   }
 
   // Generado por (derecha)
@@ -396,10 +421,14 @@ function drawFooterContent(doc, invoice, pageWidth, pageHeight, footerY) {
     doc.text(`Cotizacion: ${invoice.quote.number}`, pageWidth - 20, footerY + 5, { align: 'right' })
   }
 
-  // Mensaje de agradecimiento (centrado, por encima de la decoracion)
+  // Mensaje de agradecimiento (centrado, por debajo de toda la informacion de la empresa)
+  // Calcular la posicion Y mas baja entre la informacion de la empresa y el lado derecho
+  const maxInfoY = Math.max(companyInfoY, footerY + 10)
+  const thanksY = maxInfoY + 8 // Espacio adicional antes del mensaje
+  
   doc.setFontSize(10)
   doc.setFont(undefined, 'italic')
-  doc.text('Gracias por su preferencia', pageWidth / 2, pageHeight - 45, { align: 'center' })
+  doc.text('Gracias por su preferencia', pageWidth / 2, thanksY, { align: 'center' })
 }
 
 // Funcion para dibujar la decoracion superior

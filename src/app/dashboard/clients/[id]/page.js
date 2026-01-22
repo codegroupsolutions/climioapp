@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { generateInvoicePDF } from '@/utils/generateInvoicePDF'
+import { generateQuotePDF } from '@/utils/generateQuotePDF'
 
 export default function ClientDetailPage() {
   const params = useParams()
@@ -63,6 +64,7 @@ export default function ClientDetailPage() {
 
   const tabs = [
     { id: 'info', name: 'Información', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+    { id: 'quotes', name: 'Cotizaciones', count: client.quotes?.length || 0, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
     { id: 'invoices', name: 'Facturas', count: client.invoices?.length || 0, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
     { id: 'appointments', name: 'Citas', count: client.appointments?.length || 0, icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
   ]
@@ -223,6 +225,10 @@ export default function ClientDetailPage() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
+                    <span className="text-gray-600">Cotizaciones</span>
+                    <span className="font-medium">{client.quotes?.length || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-gray-600">Facturas</span>
                     <span className="font-medium">{client.invoices?.length || 0}</span>
                   </div>
@@ -236,6 +242,12 @@ export default function ClientDetailPage() {
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h3>
                 <div className="space-y-2">
+                  <Link
+                    href={`/dashboard/quotes/new?clientId=${client.id}`}
+                    className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition-colors block"
+                  >
+                    📄 Crear Cotización
+                  </Link>
                   <Link
                     href={`/dashboard/invoices/new?clientId=${client.id}`}
                     className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition-colors block"
@@ -252,6 +264,134 @@ export default function ClientDetailPage() {
               </div>
             </div>
           </>
+        )}
+
+        {activeTab === 'quotes' && (
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-lg border border-gray-200">
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-gray-900">Cotizaciones</h2>
+                <Link
+                  href={`/dashboard/quotes/new?clientId=${client.id}`}
+                  className="px-4 py-2 bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+                >
+                  Nueva Cotización
+                </Link>
+              </div>
+              {client.quotes?.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Número
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Fecha
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Estado
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Válida hasta
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Acciones
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {client.quotes.map((quote) => (
+                        <tr key={quote.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <Link
+                              href={`/dashboard/quotes/${quote.id}`}
+                              className="text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              {quote.number}
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {new Date(quote.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              quote.status === 'ACCEPTED' ? 'bg-green-100 text-green-800' :
+                              quote.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                              quote.status === 'SENT' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {quote.status === 'ACCEPTED' ? 'Aceptada' :
+                               quote.status === 'REJECTED' ? 'Rechazada' :
+                               quote.status === 'SENT' ? 'Enviada' : 'Borrador'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {quote.validUntil ? new Date(quote.validUntil).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${quote.total?.toFixed(2) || '0.00'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/dashboard/quotes/${quote.id}`}
+                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Ver detalle"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </Link>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation()
+                                  try {
+                                    // Fetch full quote data for PDF
+                                    const response = await fetch(`/api/quotes/${quote.id}`)
+                                    if (response.ok) {
+                                      const fullQuote = await response.json()
+                                      const doc = await generateQuotePDF(fullQuote)
+                                      doc.save(`${fullQuote.number || quote.number}.pdf`)
+                                    } else {
+                                      alert('Error al cargar los datos de la cotización')
+                                    }
+                                  } catch (error) {
+                                    console.error('Error generating PDF:', error)
+                                    alert('Error al generar el PDF')
+                                  }
+                                }}
+                                className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Descargar PDF"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-12 text-center text-gray-500">
+                  <p className="mb-4">No hay cotizaciones para este cliente</p>
+                  <Link
+                    href={`/dashboard/quotes/new?clientId=${client.id}`}
+                    className="inline-flex items-center px-4 py-2 bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+                  >
+                    Crear primera cotización
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {activeTab === 'invoices' && (
