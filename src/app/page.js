@@ -189,7 +189,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-between items-center">
             <div className="text-gray-600">
-              © 2025 CLIMIO. Todos los derechos reservados.{' '}
+              © {new Date().getFullYear()} CLIMIO. Todos los derechos reservados.{' '}
               <Link
                 href="https://otizy.com"
                 className="text-gray-600 hover:text-black transition-colors"
@@ -200,7 +200,7 @@ export default function LandingPage() {
               </Link>
               .
             </div>
-            <div className="flex gap-8">
+            <div className="flex gap-8 items-center">
               <Link href="/privacy" className="text-gray-600 hover:text-black transition-colors">Política de Privacidad</Link>
               <Link href="/terms" className="text-gray-600 hover:text-black transition-colors">Términos y Condiciones</Link>
               <button
@@ -209,6 +209,7 @@ export default function LandingPage() {
               >
                 Contacto
               </button>
+              <span className="text-gray-400 text-sm">Versión 0.1.0</span>
             </div>
           </div>
         </div>

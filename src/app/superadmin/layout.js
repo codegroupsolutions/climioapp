@@ -7,6 +7,7 @@ import {
   FaHome, FaBuilding, FaCreditCard, FaUsers, FaBars, FaTimes,
   FaSignOutAlt, FaShieldAlt, FaChartLine
 } from 'react-icons/fa'
+import { APP_VERSION } from '@/config/version'
 
 export default function SuperAdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -163,9 +164,21 @@ export default function SuperAdminLayout({ children }) {
         </div>
 
         {/* Page content */}
-        <main className="min-h-screen">
+        <main className="min-h-[calc(100vh-4rem)]">
           {children}
         </main>
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-gray-200 py-4 px-4">
+          <div className="flex justify-between items-center text-sm text-gray-500">
+            <div>
+              © {new Date().getFullYear()} CLIMIO. Todos los derechos reservados.
+            </div>
+            <div className="flex items-center gap-4">
+              <span>Versión {APP_VERSION}</span>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   )

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { APP_VERSION } from '@/config/version'
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname()
@@ -374,9 +375,21 @@ export default function DashboardLayout({ children }) {
         </header>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-4rem)]">
           {children}
         </main>
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-gray-200 py-4 px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center text-sm text-gray-500">
+            <div>
+              © {new Date().getFullYear()} CLIMIO. Todos los derechos reservados.
+            </div>
+            <div className="flex items-center gap-4">
+              <span>Versión {APP_VERSION}</span>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   )
