@@ -1,6 +1,44 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
+// Colores del PDF
+const PRIMARY_COLOR = [204, 204, 204] // #ccc - gris para bandas decorativas
+const DARK_GRAY = [51, 51, 51]
+const LIGHT_GRAY = [229, 229, 229]
+
+// Funcion para comprimir imagen manteniendo transparencia
+function compressImage(dataUrl, maxWidth = 300, maxHeight = 200) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      let width = img.width
+      let height = img.height
+
+      // Redimensionar si es muy grande
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width
+        width = maxWidth
+      }
+      if (height > maxHeight) {
+        width = (width * maxHeight) / height
+        height = maxHeight
+      }
+
+      canvas.width = width
+      canvas.height = height
+
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+
+      // Exportar como PNG para mantener transparencia
+      resolve(canvas.toDataURL('image/png'))
+    }
+    img.onerror = () => resolve(dataUrl) // Si falla, usar original
+    img.src = dataUrl
+  })
+}
+
 export async function generateQuotePDF(quote) {
   if (!quote) {
     throw new Error('No quote data provided')
@@ -11,97 +49,164 @@ export async function generateQuotePDF(quote) {
     orientation: 'portrait',
     unit: 'mm'
   })
+  const pageWidth = doc.internal.pageSize.width
+  const pageHeight = doc.internal.pageSize.height
 
-  // Company header
-  let headerStartY = 20
+  // ========== HEADER CON CURVA DECORATIVA ==========
+  drawTopDecoration(doc, pageWidth)
 
-  doc.setFontSize(20)
-  doc.setFont(undefined, 'bold')
-  doc.text(quote.company?.name || 'Mi Empresa', 20, headerStartY)
+  // Posicion Y dinamica - empieza despues de la decoracion superior
+  let yPos = 20
 
-  doc.setFontSize(10)
-  doc.setFont(undefined, 'normal')
-  let yPos = headerStartY + 7
+  // Logo y nombre de empresa (derecha)
+  if (quote.company?.logo) {
+    try {
+      const apiResponse = await fetch(`/api/image-to-base64?url=${encodeURIComponent(quote.company.logo)}`)
 
-  if (quote.company?.address) {
-    doc.text(quote.company.address, 20, yPos)
-    yPos += 5
-  }
-  if (quote.company?.city && quote.company?.state) {
-    doc.text(`${quote.company.city}, ${quote.company.state}`, 20, yPos)
-    yPos += 5
-  }
-  if (quote.company?.phone) {
-    doc.text(`Tel: ${quote.company.phone}`, 20, yPos)
-    yPos += 5
-  }
-  if (quote.company?.email) {
-    doc.text(`Email: ${quote.company.email}`, 20, yPos)
-    yPos += 5
-  }
+      if (apiResponse.ok) {
+        const { dataUrl } = await apiResponse.json()
 
-  // Quote title and number
-  const quoteHeaderY = 20
-  doc.setFontSize(18)
-  doc.setFont(undefined, 'bold')
-  doc.text('COTIZACIÓN', 140, quoteHeaderY)
+        // Comprimir imagen para reducir tamano del PDF
+        const compressedImage = await compressImage(dataUrl, 300, 200, 0.6)
 
-  doc.setFontSize(12)
-  doc.setFont(undefined, 'normal')
-  doc.text(quote.number, 140, quoteHeaderY + 8)
+        const img = new Image()
+        await new Promise((resolve, reject) => {
+          img.onload = resolve
+          img.onerror = reject
+          img.src = compressedImage
+        })
 
-  doc.setFontSize(10)
-  const date = new Date(quote.date).toLocaleDateString('es-PR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-  doc.text(`Fecha: ${date}`, 140, quoteHeaderY + 15)
+        const maxLogoWidth = 75
+        const maxLogoHeight = 40
+        const aspectRatio = img.width / img.height
+        let logoWidth, logoHeight
 
-  if (quote.validUntil) {
-    const validUntil = new Date(quote.validUntil).toLocaleDateString('es-PR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-    doc.text(`Válida hasta: ${validUntil}`, 140, quoteHeaderY + 22)
+        if (img.width > img.height) {
+          logoWidth = Math.min(maxLogoWidth, img.width)
+          logoHeight = logoWidth / aspectRatio
+        } else {
+          logoHeight = Math.min(maxLogoHeight, img.height)
+          logoWidth = logoHeight * aspectRatio
+        }
+
+        // Logo alineado a la derecha (PNG para mantener transparencia)
+        doc.addImage(compressedImage, 'PNG', pageWidth - 10 - logoWidth, 18, logoWidth, logoHeight)
+
+        // Actualizar yPos si el logo es mas alto
+        const logoEndY = 18 + logoHeight + 5
+        yPos = Math.max(yPos, logoEndY)
+      }
+    } catch (error) {
+      console.error('Error loading company logo:', error)
+    }
   }
 
-  // Client information (adjust position based on company info)
-  const clientHeaderY = Math.max(yPos + 5, 60)
+  // Asegurar espacio minimo despues del header
+  yPos = Math.max(yPos, 35)
+
+  // ========== DATOS DEL CLIENTE (izquierda) ==========
   doc.setFontSize(12)
   doc.setFont(undefined, 'bold')
-  doc.text('CLIENTE', 20, clientHeaderY)
+  doc.setTextColor(...DARK_GRAY)
+  doc.text('DATOS DEL CLIENTE', 20, yPos)
 
   doc.setFontSize(10)
   doc.setFont(undefined, 'normal')
-  let clientYPos = clientHeaderY + 8
+  doc.setTextColor(0, 0, 0)
+  yPos += 8
+
   if (quote.client) {
-    doc.text(`${quote.client.firstName || ''} ${quote.client.lastName || ''}`, 20, clientYPos)
-    clientYPos += 5
+    const clientName = `${quote.client.firstName || ''} ${quote.client.lastName || ''}`.trim()
+    doc.text(`Nombre: ${clientName}`, 20, yPos)
+    yPos += 6
+
     if (quote.client.companyName) {
-      doc.text(quote.client.companyName, 20, clientYPos)
-      clientYPos += 5
+      doc.text(`Empresa: ${quote.client.companyName}`, 20, yPos)
+      yPos += 6
     }
+
     if (quote.client.address) {
-      doc.text(quote.client.address, 20, clientYPos)
-      clientYPos += 5
+      const fullAddress = quote.client.city && quote.client.state
+        ? `${quote.client.address}, ${quote.client.city}, ${quote.client.state}`
+        : quote.client.address
+      doc.text(`Direccion: ${fullAddress}`, 20, yPos)
+      yPos += 6
     }
-    if (quote.client.city && quote.client.state) {
-      doc.text(`${quote.client.city}, ${quote.client.state}`, 20, clientYPos)
-      clientYPos += 5
-    }
-    if (quote.client.phone) {
-      doc.text(`Tel: ${quote.client.phone}`, 20, clientYPos)
-      clientYPos += 5
-    }
+
     if (quote.client.email) {
-      doc.text(`Email: ${quote.client.email}`, 20, clientYPos)
+      doc.text(`Mail: ${quote.client.email}`, 20, yPos)
+      yPos += 6
+    }
+
+    if (quote.client.phone) {
+      doc.text(`Telefono: ${quote.client.phone}`, 20, yPos)
+      yPos += 6
     }
   }
 
-  // Items table (start below client info)
-  const tableStartY = clientYPos + 10
+  // ========== FECHA Y NUMERO DE COTIZACION ==========
+  yPos += 6
+
+  const issueDate = new Date(quote.date).toLocaleDateString('es-PR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+
+  doc.setFont(undefined, 'bold')
+  doc.text(`Fecha: ${issueDate}`, 20, yPos)
+
+  // Numero de cotizacion a la derecha
+  doc.text(`Cotizacion: ${quote.number}`, pageWidth - 20, yPos, { align: 'right' })
+  yPos += 6
+
+  // Tipo de cotizacion
+  const quoteType = quote.type === 'SERVICE' ? 'Servicio' : 'Equipo'
+  doc.setFont(undefined, 'normal')
+  doc.text(`Tipo: ${quoteType}`, pageWidth - 20, yPos, { align: 'right' })
+
+  // Validez de la cotizacion
+  if (quote.validUntil) {
+    yPos += 6
+    const validUntil = new Date(quote.validUntil).toLocaleDateString('es-PR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+    doc.text(`Valida hasta: ${validUntil}`, pageWidth - 20, yPos, { align: 'right' })
+  }
+
+  // Estado de la cotizacion
+  yPos += 6
+  let statusText = ''
+  let statusColor = [0, 0, 0]
+
+  switch(quote.status) {
+    case 'ACCEPTED':
+      statusText = 'ACEPTADA'
+      statusColor = [0, 128, 0]
+      break
+    case 'REJECTED':
+      statusText = 'RECHAZADA'
+      statusColor = [255, 0, 0]
+      break
+    case 'CONVERTED':
+      statusText = 'CONVERTIDA'
+      statusColor = [0, 0, 255]
+      break
+    default:
+      statusText = 'PENDIENTE'
+      statusColor = [255, 165, 0]
+  }
+
+  doc.setFont(undefined, 'bold')
+  doc.setTextColor(...statusColor)
+  doc.text(`Estado: ${statusText}`, pageWidth - 20, yPos, { align: 'right' })
+  doc.setTextColor(0, 0, 0)
+
+  // ========== TABLA DE ITEMS ==========
+  yPos += 12
+
   const tableData = quote.items && quote.items.length > 0
     ? quote.items.map(item => [
         item.description || '',
@@ -111,75 +216,183 @@ export async function generateQuotePDF(quote) {
       ])
     : [['Sin items', '', '', '']]
 
-  autoTable(doc, {
-    startY: tableStartY,
-    head: [['Descripción', 'Cantidad', 'Precio Unit.', 'Total']],
+  const tableResult = autoTable(doc, {
+    startY: yPos,
+    head: [['Concepto', 'Cantidad', 'Precio', 'Total']],
     body: tableData,
-    theme: 'striped',
+    theme: 'plain',
+    margin: { left: 20, right: 20 },
+    tableWidth: 'auto',
     headStyles: {
-      fillColor: [0, 0, 0],
+      fillColor: DARK_GRAY,
       textColor: [255, 255, 255],
       fontSize: 10,
       fontStyle: 'bold',
+      halign: 'center',
     },
     bodyStyles: {
       fontSize: 9,
+      lineColor: LIGHT_GRAY,
+      lineWidth: 0.5,
+    },
+    alternateRowStyles: {
+      fillColor: [250, 250, 250],
     },
     columnStyles: {
-      0: { cellWidth: 90 },
+      0: { cellWidth: 'auto', halign: 'left' },
       1: { cellWidth: 25, halign: 'center' },
-      2: { cellWidth: 35, halign: 'right' },
-      3: { cellWidth: 35, halign: 'right' },
+      2: { cellWidth: 30, halign: 'right' },
+      3: { cellWidth: 30, halign: 'right' },
     },
+    styles: {
+      cellPadding: 4,
+    },
+    tableLineColor: LIGHT_GRAY,
+    tableLineWidth: 0.5,
   })
 
-  // Totals
-  const finalY = doc.previousAutoTable ? doc.previousAutoTable.finalY + 10 : 150
+  // ========== SECCION DE TOTALES Y NOTAS ==========
+  // Obtener posicion final de la tabla (compatible con diferentes versiones de jspdf-autotable)
+  const tableFinalY = tableResult?.finalY || doc.lastAutoTable?.finalY || doc.previousAutoTable?.finalY || yPos + 50
+  yPos = tableFinalY + 10
 
-  doc.setFontSize(10)
+  // Notas (izquierda)
+  doc.setFontSize(9)
   doc.setFont(undefined, 'normal')
+  doc.setTextColor(0, 0, 0)
 
-  // Subtotal
-  doc.text('Subtotal:', 140, finalY)
-  doc.text(formatCurrency(quote.subtotal || 0), 185, finalY, { align: 'right' })
+  let leftColumnY = yPos
 
-  // Discount
-  if ((quote.discount || 0) > 0) {
-    doc.text('Descuento:', 140, finalY + 7)
-    doc.text(`-${formatCurrency(quote.discount || 0)}`, 185, finalY + 7, { align: 'right' })
+  // Notas
+  if (quote.notes) {
+    doc.setFont(undefined, 'bold')
+    doc.text('Notas:', 20, leftColumnY)
+    doc.setFont(undefined, 'normal')
+    leftColumnY += 5
+
+    const splitNotes = doc.splitTextToSize(quote.notes, 100)
+    doc.text(splitNotes, 20, leftColumnY)
+    leftColumnY += splitNotes.length * 4
   }
 
-  // Tax
-  doc.text('IVU (11.5%):', 140, finalY + 14)
-  doc.text(formatCurrency(quote.tax || 0), 185, finalY + 14, { align: 'right' })
+  // Totales (derecha)
+  doc.setFontSize(10)
+  const totalsX = 140
+  const totalsValueX = pageWidth - 20
+  let totalsY = yPos
+
+  // Subtotal
+  doc.setFont(undefined, 'normal')
+  doc.text('Subtotal', totalsX, totalsY)
+  doc.text(formatCurrency(quote.subtotal || 0), totalsValueX, totalsY, { align: 'right' })
+  totalsY += 7
+
+  // Descuento (si aplica)
+  if ((quote.discount || 0) > 0) {
+    doc.text('Descuento', totalsX, totalsY)
+    doc.text(`-${formatCurrency(quote.discount || 0)}`, totalsValueX, totalsY, { align: 'right' })
+    totalsY += 7
+  }
+
+  // IVU
+  doc.text('IVU 11.5%', totalsX, totalsY)
+  doc.text(formatCurrency(quote.tax || 0), totalsValueX, totalsY, { align: 'right' })
+  totalsY += 8
+
+  // Linea separadora antes del total
+  doc.setDrawColor(...LIGHT_GRAY)
+  doc.setLineWidth(0.5)
+  doc.line(totalsX, totalsY - 2, totalsValueX, totalsY - 2)
 
   // Total
   doc.setFont(undefined, 'bold')
   doc.setFontSize(12)
-  doc.text('TOTAL:', 140, finalY + 24)
-  doc.text(formatCurrency(quote.total || 0), 185, finalY + 24, { align: 'right' })
+  doc.text('Total', totalsX, totalsY + 4)
+  doc.text(formatCurrency(quote.total || 0), totalsValueX, totalsY + 4, { align: 'right' })
+  totalsY += 4
 
-  // Notes
-  if (quote.notes) {
-    doc.setFont(undefined, 'normal')
-    doc.setFontSize(10)
-    doc.text('NOTAS:', 20, finalY + 35)
-    doc.setFontSize(9)
+  // ========== FOOTER ==========
+  // Calcular donde termina el contenido
+  const contentEndY = Math.max(leftColumnY, totalsY) + 15
 
-    const splitNotes = doc.splitTextToSize(quote.notes, 170)
-    doc.text(splitNotes, 20, finalY + 42)
-  }
+  // Footer dinamico - se posiciona despues del contenido con espacio minimo
+  const minFooterSpace = 50
+  const footerY = Math.max(contentEndY, pageHeight - minFooterSpace)
 
-  // Footer
-  const pageHeight = doc.internal.pageSize.height
-  doc.setFontSize(8)
-  doc.setFont(undefined, 'italic')
-  doc.text('Gracias por su preferencia', 105, pageHeight - 20, { align: 'center' })
-  if (quote.user) {
-    doc.text(`Generado por ${quote.user.firstName || ''} ${quote.user.lastName || ''}`, 105, pageHeight - 15, { align: 'center' })
+  // Si el footer excede la pagina, agregar nueva pagina
+  if (footerY > pageHeight - 20) {
+    doc.addPage()
+    // Primero la decoracion, luego el texto encima
+    drawBottomDecoration(doc, pageWidth, pageHeight)
+    const newPageFooterY = 20
+    drawFooterContent(doc, quote, pageWidth, pageHeight, newPageFooterY)
+  } else {
+    // Primero la decoracion, luego el texto encima
+    drawBottomDecoration(doc, pageWidth, pageHeight)
+    drawFooterContent(doc, quote, pageWidth, pageHeight, footerY)
   }
 
   return doc
+}
+
+// Funcion para dibujar el contenido del footer
+function drawFooterContent(doc, quote, pageWidth, pageHeight, footerY) {
+  doc.setFontSize(9)
+  doc.setFont(undefined, 'bold')
+  doc.setTextColor(0, 0, 0)
+
+  if (quote.company?.name) {
+    doc.text(quote.company.name, 20, footerY)
+  }
+
+  doc.setFont(undefined, 'normal')
+  let companyInfoY = footerY + 5
+
+  if (quote.company?.address) {
+    doc.text(`Direccion: ${quote.company.address}`, 20, companyInfoY)
+    companyInfoY += 4
+  }
+  if (quote.company?.email) {
+    doc.text(`Mail: ${quote.company.email}`, 20, companyInfoY)
+    companyInfoY += 4
+  }
+  if (quote.company?.phone) {
+    doc.text(`Telefono: ${quote.company.phone}`, 20, companyInfoY)
+  }
+
+  // Generado por (derecha)
+  if (quote.user) {
+    doc.setFont(undefined, 'normal')
+    doc.text(`Generado por: ${quote.user.firstName || ''} ${quote.user.lastName || ''}`, pageWidth - 20, footerY, { align: 'right' })
+  }
+
+  // Mensaje de agradecimiento (centrado, por encima de la decoracion)
+  doc.setFontSize(10)
+  doc.setFont(undefined, 'italic')
+  doc.text('Gracias por su preferencia', pageWidth / 2, pageHeight - 45, { align: 'center' })
+}
+
+// Funcion para dibujar la decoracion superior
+function drawTopDecoration(doc, pageWidth) {
+  doc.setFillColor(...PRIMARY_COLOR)
+
+  // Banda decorativa superior con curva
+  doc.rect(0, 0, pageWidth, 12, 'F')
+
+  // Triangulo/curva decorativa
+  doc.setFillColor(...PRIMARY_COLOR)
+  doc.triangle(pageWidth - 80, 0, pageWidth, 0, pageWidth, 40, 'F')
+}
+
+// Funcion para dibujar la decoracion inferior
+function drawBottomDecoration(doc, pageWidth, pageHeight) {
+  doc.setFillColor(...PRIMARY_COLOR)
+
+  // Banda decorativa inferior
+  doc.rect(0, pageHeight - 12, pageWidth, 12, 'F')
+
+  // Triangulo decorativo inferior izquierdo (pequeno para no tapar el footer)
+  doc.triangle(0, pageHeight, 40, pageHeight, 0, pageHeight - 20, 'F')
 }
 
 function formatCurrency(amount) {

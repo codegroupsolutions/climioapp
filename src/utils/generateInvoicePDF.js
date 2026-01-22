@@ -347,15 +347,14 @@ export async function generateInvoicePDF(invoice) {
   // Si el footer excede la pagina, agregar nueva pagina
   if (footerY > pageHeight - 20) {
     doc.addPage()
+    // Primero la decoracion, luego el texto encima
     drawBottomDecoration(doc, pageWidth, pageHeight)
-
-    // Footer en la nueva pagina
     const newPageFooterY = 20
     drawFooterContent(doc, invoice, pageWidth, pageHeight, newPageFooterY)
   } else {
-    // Footer en la misma pagina
-    drawFooterContent(doc, invoice, pageWidth, pageHeight, footerY)
+    // Primero la decoracion, luego el texto encima
     drawBottomDecoration(doc, pageWidth, pageHeight)
+    drawFooterContent(doc, invoice, pageWidth, pageHeight, footerY)
   }
 
   return doc
@@ -397,10 +396,10 @@ function drawFooterContent(doc, invoice, pageWidth, pageHeight, footerY) {
     doc.text(`Cotizacion: ${invoice.quote.number}`, pageWidth - 20, footerY + 5, { align: 'right' })
   }
 
-  // Mensaje de agradecimiento (centrado)
+  // Mensaje de agradecimiento (centrado, por encima de la decoracion)
   doc.setFontSize(10)
   doc.setFont(undefined, 'italic')
-  doc.text('Gracias por su preferencia', pageWidth / 2, pageHeight - 25, { align: 'center' })
+  doc.text('Gracias por su preferencia', pageWidth / 2, pageHeight - 45, { align: 'center' })
 }
 
 // Funcion para dibujar la decoracion superior
@@ -422,8 +421,8 @@ function drawBottomDecoration(doc, pageWidth, pageHeight) {
   // Banda decorativa inferior
   doc.rect(0, pageHeight - 12, pageWidth, 12, 'F')
 
-  // Triangulo decorativo inferior izquierdo
-  doc.triangle(0, pageHeight, 80, pageHeight, 0, pageHeight - 40, 'F')
+  // Triangulo decorativo inferior izquierdo (pequeno para no tapar el footer)
+  doc.triangle(0, pageHeight, 40, pageHeight, 0, pageHeight - 20, 'F')
 }
 
 function formatCurrency(amount) {

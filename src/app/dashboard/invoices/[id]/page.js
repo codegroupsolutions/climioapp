@@ -17,6 +17,9 @@ export default function InvoiceDetailPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
+  const [generatingPDF, setGeneratingPDF] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [processingPayment, setProcessingPayment] = useState(false)
   const [emailForm, setEmailForm] = useState({ email: '' })
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
@@ -98,6 +101,7 @@ export default function InvoiceDetailPage() {
       return
     }
 
+    setProcessingPayment(true)
     try {
       const response = await fetch(`/api/invoices/${params.id}/payments`, {
         method: 'POST',
@@ -127,6 +131,8 @@ export default function InvoiceDetailPage() {
     } catch (error) {
       console.error('Error recording payment:', error)
       alert('Error al registrar el pago')
+    } finally {
+      setProcessingPayment(false)
     }
   }
 
@@ -135,6 +141,7 @@ export default function InvoiceDetailPage() {
       return
     }
 
+    setDeleting(true)
     try {
       const response = await fetch(`/api/invoices/${params.id}`, {
         method: 'DELETE',
@@ -149,16 +156,21 @@ export default function InvoiceDetailPage() {
     } catch (error) {
       console.error('Error deleting invoice:', error)
       alert('Error al eliminar la factura')
+    } finally {
+      setDeleting(false)
     }
   }
 
   const handleDownloadPDF = async () => {
+    setGeneratingPDF(true)
     try {
       const doc = await generateInvoicePDF(invoice)
       doc.save(`${invoice.number}.pdf`)
     } catch (error) {
       console.error('Error generating PDF:', error)
       alert('Error al generar el PDF')
+    } finally {
+      setGeneratingPDF(false)
     }
   }
 
@@ -378,12 +390,17 @@ export default function InvoiceDetailPage() {
             {/* Other Actions */}
             <button
               onClick={handleDownloadPDF}
-              className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              disabled={generatingPDF}
+              className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              PDF
+              {generatingPDF ? (
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              )}
+              {generatingPDF ? 'Generando...' : 'PDF'}
             </button>
             {/* Send Email - Admin only */}
             {isAdmin && (
@@ -413,12 +430,17 @@ export default function InvoiceDetailPage() {
             {invoice.status !== 'PAID' && (!invoice.payments || invoice.payments.length === 0) && (
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2"
+                disabled={deleting}
+                className="px-4 py-2 border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Eliminar
+                {deleting ? (
+                  <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                )}
+                {deleting ? 'Eliminando...' : 'Eliminar'}
               </button>
             )}
           </div>
@@ -449,12 +471,17 @@ export default function InvoiceDetailPage() {
               </button>
               <button
                 onClick={handleDownloadPDF}
-                className="px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                disabled={generatingPDF}
+                className="px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                PDF
+                {generatingPDF ? (
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                )}
+                {generatingPDF ? 'Generando...' : 'PDF'}
               </button>
               <Link
                 href={`/dashboard/invoices/${invoice.id}/edit`}
@@ -493,12 +520,17 @@ export default function InvoiceDetailPage() {
               </button>
               <button
                 onClick={handleDownloadPDF}
-                className="px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                disabled={generatingPDF}
+                className="px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                PDF
+                {generatingPDF ? (
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                )}
+                {generatingPDF ? 'Generando...' : 'PDF'}
               </button>
             </>
           )}
@@ -506,12 +538,17 @@ export default function InvoiceDetailPage() {
             <>
               <button
                 onClick={handleDownloadPDF}
-                className="px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                disabled={generatingPDF}
+                className="px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                PDF
+                {generatingPDF ? (
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                )}
+                {generatingPDF ? 'Generando...' : 'PDF'}
               </button>
               {isAdmin && (
                 <>
@@ -918,10 +955,13 @@ export default function InvoiceDetailPage() {
                 <button
                   type="button"
                   onClick={handlePaymentSubmit}
-                  disabled={!paymentForm.amount || parseFloat(paymentForm.amount) <= 0}
-                  className="w-full inline-flex justify-center px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  disabled={!paymentForm.amount || parseFloat(paymentForm.amount) <= 0 || processingPayment}
+                  className="w-full inline-flex justify-center items-center gap-2 px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Registrar Pago
+                  {processingPayment && (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  )}
+                  {processingPayment ? 'Procesando...' : 'Registrar Pago'}
                 </button>
                 <button
                   type="button"
@@ -982,8 +1022,11 @@ export default function InvoiceDetailPage() {
                   type="button"
                   onClick={handleSendEmail}
                   disabled={!emailForm.email || sendingEmail}
-                  className="w-full inline-flex justify-center px-4 py-2 bg-black text-base font-medium text-white hover:bg-gray-800 focus:outline-none sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full inline-flex justify-center items-center gap-2 px-4 py-2 bg-black text-base font-medium text-white hover:bg-gray-800 focus:outline-none sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
+                  {sendingEmail && (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  )}
                   {sendingEmail ? 'Enviando...' : 'Enviar Factura'}
                 </button>
                 <button
