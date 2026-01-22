@@ -57,7 +57,6 @@ jobs:
           mkdir -p build/.next/static build/public
           cp -r .next/standalone/* build/
           cp -r .next/static/* build/.next/static/
-          cp -r public/* build/public/
           cp package.json build/
           cp package-lock.json build/
           cp next.config.mjs build/
