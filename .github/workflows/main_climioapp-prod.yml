@@ -54,9 +54,9 @@ jobs:
 
       - name: Create build folder
         run: |
-          mkdir -p build/.next/static build/public
+          mkdir -p build build/.next
           cp -r .next/standalone/* build/
-          cp -r .next/static/* build/.next/static/
+          cp -r .next/static build/.next/
           cp package.json build/
           cp package-lock.json build/
           cp next.config.mjs build/
