@@ -54,12 +54,13 @@ jobs:
 
       - name: Create build folder
         run: |
-          mkdir -p build build/.next
-          cp -r .next/standalone/* build/
-          cp -r .next/static build/.next/
-          cp package.json build/
-          cp package-lock.json build/
-          cp next.config.mjs build/
+          mkdir -p build build/.next build/.next/static
+          cp -a .next/standalone/. build/
+          cp -a .next/static/. build/.next/static/
+          cp -v package.json build/
+          cp -v package-lock.json build/
+          cp -v next.config.mjs build/
+
 
       - name: Create build zip
         run: |
