@@ -164,9 +164,12 @@ export default function AppointmentsPage() {
     return (
         <div className="max-w-full mx-auto">
             {/* Header */}
-            <div className="mb-6 flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-gray-900">Calendario de Servicios</h1>
-                <div className="flex space-x-3">
+            <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Calendario de Servicios</h1>
+                    <p className="text-sm sm:text-base text-gray-600 mt-1">Gestiona tus citas y servicios programados</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <div className="flex bg-gray-100 rounded-lg p-1">
                         <button
                             onClick={() => setView('calendar')}

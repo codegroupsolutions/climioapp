@@ -225,8 +225,8 @@ export default function SettingsPage() {
   }
 
   const renderProfileTab = () => (
-    <form onSubmit={handleProfileSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleProfileSubmit} className="space-y-4 sm:space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Nombre
@@ -283,7 +283,7 @@ export default function SettingsPage() {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-2.5 sm:py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 text-sm sm:text-base"
         >
           {loading ? 'Guardando...' : 'Guardar Cambios'}
         </button>
@@ -292,9 +292,9 @@ export default function SettingsPage() {
   )
 
   const renderCompanyTab = () => (
-    <form onSubmit={handleCompanySubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="md:col-span-2">
+    <form onSubmit={handleCompanySubmit} className="space-y-4 sm:space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Nombre de la Empresa *
           </label>
@@ -362,7 +362,7 @@ export default function SettingsPage() {
           />
         </div>
 
-        <div className="md:col-span-2">
+        <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Dirección Física
           </label>
@@ -370,12 +370,12 @@ export default function SettingsPage() {
             value={company.address}
             onChange={(e) => setCompany({ ...company, address: e.target.value })}
             rows="3"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base"
             placeholder="Calle, Número, Colonia, Ciudad, Estado, CP"
           />
         </div>
 
-        <div className="md:col-span-2">
+        <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Dirección Postal
           </label>
@@ -383,19 +383,19 @@ export default function SettingsPage() {
             value={company.postalAddress}
             onChange={(e) => setCompany({ ...company, postalAddress: e.target.value })}
             rows="3"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base"
             placeholder="Apartado Postal, Casilla, o dirección para correspondencia"
           />
         </div>
 
-        <div className="md:col-span-2">
+        <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Logo de la Empresa
           </label>
           <div className="space-y-4">
             {company.logo && (
-              <div className="flex items-center gap-4">
-                <img src={company.logo} alt="Logo" className="h-20 object-contain border border-gray-200 rounded-lg p-2" />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                <img src={company.logo} alt="Logo" className="h-16 sm:h-20 object-contain border border-gray-200 rounded-lg p-2" />
                 <button
                   type="button"
                   onClick={async () => {
@@ -466,7 +466,7 @@ export default function SettingsPage() {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-2.5 sm:py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 text-sm sm:text-base"
         >
           {loading ? 'Guardando...' : 'Guardar Cambios'}
         </button>
@@ -475,7 +475,7 @@ export default function SettingsPage() {
   )
 
   const renderPasswordTab = () => (
-    <form onSubmit={handlePasswordSubmit} className="space-y-6 max-w-md">
+    <form onSubmit={handlePasswordSubmit} className="space-y-4 sm:space-y-6 max-w-full sm:max-w-md">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Contraseña Actual
@@ -521,7 +521,7 @@ export default function SettingsPage() {
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-2.5 sm:py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 text-sm sm:text-base"
         >
           {loading ? 'Cambiando...' : 'Cambiar Contraseña'}
         </button>
@@ -587,18 +587,18 @@ export default function SettingsPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Configuración</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">
           Administra tu perfil y las configuraciones del sistema
         </p>
       </div>
 
       {/* Message Alert */}
       {message.text && (
-        <div className={`p-4 rounded-lg ${
+        <div className={`p-3 sm:p-4 rounded-lg text-sm sm:text-base ${
           message.type === 'success'
             ? 'bg-green-50 border-l-4 border-green-500 text-green-700'
             : 'bg-red-50 border-l-4 border-red-500 text-red-700'
@@ -610,27 +610,27 @@ export default function SettingsPage() {
       {/* Tabs */}
       <div className="bg-white rounded-lg shadow">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6" aria-label="Tabs">
+          <nav className="flex overflow-x-auto scrollbar-hide px-4 sm:px-6" aria-label="Tabs">
             {availableTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeTab === tab.id
                     ? 'border-black text-black'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  <span className="text-xl">{tab.icon}</span>
-                  {tab.name}
+                <span className="flex items-center gap-1 sm:gap-2">
+                  <span className="text-lg sm:text-xl">{tab.icon}</span>
+                  <span>{tab.name}</span>
                 </span>
               </button>
             ))}
           </nav>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {activeTab === 'profile' && renderProfileTab()}
           {activeTab === 'company' && renderCompanyTab()}
           {activeTab === 'password' && renderPasswordTab()}
@@ -639,9 +639,9 @@ export default function SettingsPage() {
       </div>
 
       {/* Quick Actions Section */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Acciones Rápidas</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {/* Backup and Export */}
           <Link
             href="/dashboard/settings/backup"

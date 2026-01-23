@@ -135,14 +135,14 @@ export default function ServiceContractsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contratos de Servicio</h1>
-          <p className="text-gray-600">Gestiona los contratos de servicio con tus clientes</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Contratos de Servicio</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Gestiona los contratos de servicio con tus clientes</p>
         </div>
         <Link
           href="/dashboard/service-contracts/new"
-          className="px-4 py-2 bg-black text-white hover:bg-gray-800 transition-colors flex items-center gap-2"
+          className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2 bg-black text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 rounded"
         >
           <FaPlus />
           Nuevo Contrato

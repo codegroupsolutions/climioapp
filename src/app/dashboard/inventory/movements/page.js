@@ -179,21 +179,21 @@ export default function MovementsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <div className="flex items-center text-sm text-gray-500 mb-2">
+          <div className="flex items-center text-xs sm:text-sm text-gray-500 mb-2">
             <Link href="/dashboard/inventory" className="hover:text-gray-700">
               Inventario
             </Link>
             <span className="mx-2">/</span>
             <span>Movimientos</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Movimientos de Inventario</h1>
-          <p className="text-gray-600">Historial completo de entradas y salidas</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Movimientos de Inventario</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Historial completo de entradas y salidas</p>
         </div>
         <button
           onClick={() => setShowAdjustmentModal(true)}
-          className="px-4 py-2 bg-black text-white hover:bg-gray-800 transition-colors"
+          className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2 bg-black text-white hover:bg-gray-800 transition-colors rounded"
         >
           + Registrar Movimiento
         </button>

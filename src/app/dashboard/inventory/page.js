@@ -75,21 +75,21 @@ export default function InventoryPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inventario</h1>
-          <p className="text-gray-600">Gestiona tu inventario y controla el stock</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Inventario</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Gestiona tu inventario y controla el stock</p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Link
             href="/dashboard/inventory/categories"
-            className="px-4 py-2 border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors text-center rounded"
           >
             Categorías
           </Link>
           <Link
             href="/dashboard/inventory/products/new"
-            className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors text-center rounded"
           >
             Nuevo Producto
           </Link>

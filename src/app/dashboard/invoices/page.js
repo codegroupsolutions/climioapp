@@ -92,11 +92,14 @@ export default function InvoicesPage() {
   return (
     <div className="max-w-full mx-auto">
       {/* Header */}
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Facturas</h1>
+      <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Facturas</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Gestiona tus facturas y pagos</p>
+        </div>
         <Link
           href="/dashboard/invoices/new"
-          className="px-4 py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors text-center sm:text-left rounded"
         >
           Nueva Factura
         </Link>

@@ -35,22 +35,22 @@ export default function FeaturesGrid() {
   ]
 
   return (
-    <section className="py-20 px-6 bg-gray-50">
+    <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 bg-gray-50">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-4xl font-bold text-center text-black mb-4">
+        <h2 className="text-3xl sm:text-4xl font-bold text-center text-black mb-3 sm:mb-4 px-2">
           Todo lo que necesitas para crecer
         </h2>
-        <p className="text-center text-gray-600 mb-16 text-lg max-w-3xl mx-auto">
+        <p className="text-center text-gray-600 mb-10 sm:mb-12 md:mb-16 text-base sm:text-lg max-w-3xl mx-auto px-2">
           Herramientas diseñadas específicamente para empresas de climatización y refrigeración.
           Simplifica tu operación diaria y enfócate en lo que importa: tus clientes.
         </p>
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="p-8 bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 group"
+              className="p-6 sm:p-8 bg-white border-2 border-gray-200 hover:border-black transition-all duration-300 group"
             >
-              <div className="w-12 h-12 mb-6 text-black">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-4 sm:mb-6 text-black">
                 <svg
                   className="w-full h-full"
                   fill="none"
@@ -65,10 +65,10 @@ export default function FeaturesGrid() {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-black mb-3">
+              <h3 className="text-lg sm:text-xl font-semibold text-black mb-2 sm:mb-3">
                 {feature.title}
               </h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                 {feature.description}
               </p>
             </div>
@@ -76,31 +76,31 @@ export default function FeaturesGrid() {
         </div>
 
         {/* Additional Info Section */}
-        <div className="mt-20 text-center">
-          <div className="inline-flex items-center gap-8 flex-wrap justify-center">
+        <div className="mt-12 sm:mt-16 md:mt-20 text-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-8">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              <span className="text-gray-600">Sin tarjeta de crédito</span>
+              <span className="text-sm sm:text-base text-gray-600">Sin tarjeta de crédito</span>
             </div>
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              <span className="text-gray-600">Configuración inmediata</span>
+              <span className="text-sm sm:text-base text-gray-600">Configuración inmediata</span>
             </div>
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              <span className="text-gray-600">Soporte incluido</span>
+              <span className="text-sm sm:text-base text-gray-600">Soporte incluido</span>
             </div>
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              <span className="text-gray-600">Actualizaciones gratuitas</span>
+              <span className="text-sm sm:text-base text-gray-600">Actualizaciones gratuitas</span>
             </div>
           </div>
         </div>

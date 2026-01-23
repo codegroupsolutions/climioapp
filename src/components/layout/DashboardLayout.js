@@ -256,7 +256,7 @@ export default function DashboardLayout({ children }) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-            <Link href="/dashboard" className="flex items-center">
+            <Link href="/dashboard" onClick={() => setSidebarOpen(false)} className="flex items-center">
               <Image
                 src="/logo-black.png"
                 alt="CLIMIO"
@@ -290,6 +290,7 @@ export default function DashboardLayout({ children }) {
                   <li key={item.name}>
                     <Link
                       href={item.href}
+                      onClick={() => setSidebarOpen(false)}
                       className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                         isActive
                           ? 'bg-black text-white'
@@ -380,13 +381,13 @@ export default function DashboardLayout({ children }) {
         </main>
 
         {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 py-4 px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center text-sm text-gray-500">
-            <div>
+        <footer className="bg-white border-t border-gray-200 py-4 sm:py-5 px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
+            <div className="text-center sm:text-left">
               © {new Date().getFullYear()} CLIMIO. Todos los derechos reservados.
             </div>
-            <div className="flex items-center gap-4">
-              <span>Versión {APP_VERSION}</span>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <span className="whitespace-nowrap">Versión {APP_VERSION}</span>
             </div>
           </div>
         </footer>
