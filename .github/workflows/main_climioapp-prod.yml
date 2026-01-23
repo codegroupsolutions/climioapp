@@ -44,6 +44,14 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NODE_ENV: production
 
+      - name: Clean Next.js cache
+        run: |
+          npm run clean
+
+      - name: Update version from package.json
+        run: |
+          npm run update-version
+
       - name: Build Next.js app
         run: |
           npm run build

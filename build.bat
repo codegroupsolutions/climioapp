@@ -8,6 +8,12 @@ echo === Prisma ===
 call npx prisma db push || goto :err
 call npx prisma generate || goto :err
 
+echo === Limpiar cache de Next.js ===
+call npm run clean || goto :err
+
+echo === Actualizar versión ===
+call npm run update-version || goto :err
+
 echo === Compilar Next.js ===
 call npm run build || goto :err
 

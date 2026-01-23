@@ -1,13 +1,17 @@
 {
-  "name": "air-crm-portal",
-  "version": "0.1.0",
+  "name": "climioapp",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "prebuild": "node scripts/update-version.js",
+    "clean": "node scripts/clean-cache.js",
     "build": "next build --turbopack",
+    "build:clean": "npm run clean && npm run update-version && npm run build",
+    "dev": "next dev --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "seed:superadmin": "node scripts/seed-superadmin.js"
+    "seed:superadmin": "node scripts/seed-superadmin.js",
+    "update-version": "node scripts/update-version.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

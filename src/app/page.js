@@ -7,6 +7,7 @@ import DemoModal from '@/components/DemoModal'
 import ContactModal from '@/components/ContactModal'
 import FeaturesGrid from '@/components/FeaturesGrid'
 import { FaChartLine, FaDollarSign, FaStar, FaChartBar, FaBars, FaTimes } from 'react-icons/fa'
+import { APP_VERSION } from '@/config/version'
 
 export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -299,7 +300,7 @@ export default function LandingPage() {
                   Contacto
                 </button>
               </div>
-              <span className="text-gray-400 text-xs sm:text-sm">Versión 0.1.0</span>
+              <span className="text-gray-400 text-xs sm:text-sm">Versión {APP_VERSION}</span>
             </div>
           </div>
         </div>
