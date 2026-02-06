@@ -80,7 +80,7 @@ export default function ClientsPage() {
               : 'Gestiona tu base de clientes'}
           </p>
         </div>
-        {user?.role !== 'TECHNICIAN' && (
+        { (
           <Link
             href="/dashboard/clients/new"
             className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2 bg-black text-white font-medium hover:bg-gray-800 transition-colors text-center sm:text-left rounded"
@@ -236,7 +236,7 @@ export default function ClientsPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         </Link>
-                        {user?.role !== 'TECHNICIAN' && (
+                        {(
                           <>
                             <Link
                               href={`/dashboard/clients/${client.id}/edit`}
