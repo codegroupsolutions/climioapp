@@ -16,14 +16,6 @@ export async function POST(request, context) {
       );
     }
 
-    // Only ADMIN can send invoices by email
-    if (!isAdmin(user)) {
-      return NextResponse.json(
-        { error: "Solo administradores pueden enviar facturas por email" },
-        { status: 403 }
-      );
-    }
-
     const params = await context.params;
     const body = await request.json();
     const { email } = body;
