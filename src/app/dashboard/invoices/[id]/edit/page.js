@@ -428,12 +428,12 @@ export default function EditInvoicePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Descripción *
                     </label>
-                    <input
-                      type="text"
+                    <textarea
                       value={item.description}
                       onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-black text-sm"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:border-black text-sm resize-vertical"
                       placeholder={item.type === 'service' ? "Descripción del servicio" : "Descripción del producto"}
                       readOnly={item.type === 'product' && item.productId}
                     />
