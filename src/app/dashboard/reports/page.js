@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 
 export default function ReportsPage() {
   const router = useRouter()
@@ -24,7 +24,8 @@ export default function ReportsPage() {
     { id: 'sales', name: 'Ventas', icon: '📊', description: 'Cotizaciones, facturas y conversiones' },
     { id: 'financial', name: 'Financiero', icon: '💰', description: 'Ingresos, pagos y cuentas por cobrar' },
     { id: 'inventory', name: 'Inventario', icon: '📦', description: 'Stock, movimientos y alertas' },
-    { id: 'services', name: 'Servicios', icon: '🔧', description: 'Citas y rendimiento de técnicos' }
+    { id: 'services', name: 'Servicios', icon: '🔧', description: 'Citas y rendimiento de técnicos' },
+    { id: 'ivu', name: 'IVU', icon: '🧾', description: 'Impuesto sobre ventas (IVU)' }
   ]
 
   useEffect(() => {
@@ -97,7 +98,7 @@ export default function ReportsPage() {
         doc.text('Productos Más Cotizados', 14, yPosition)
         yPosition += 10
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: yPosition,
           head: [['Producto', 'Código', 'Cantidad', 'Total']],
           body: reportData.quotes.topProducts.map(p => [
@@ -132,7 +133,7 @@ export default function ReportsPage() {
         doc.text('Métodos de Pago', 14, yPosition)
         yPosition += 10
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: yPosition,
           head: [['Método', 'Transacciones', 'Total', '%']],
           body: reportData.cashFlow.income.byMethod.map(m => [
@@ -169,7 +170,7 @@ export default function ReportsPage() {
         doc.text('Alertas de Stock Bajo', 14, yPosition)
         yPosition += 10
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: yPosition,
           head: [['Producto', 'Código', 'Stock', 'Mínimo']],
           body: reportData.alerts.lowStock.products.slice(0, 10).map(p => [
@@ -206,7 +207,7 @@ export default function ReportsPage() {
         doc.text('Rendimiento de Técnicos', 14, yPosition)
         yPosition += 10
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: yPosition,
           head: [['Técnico', 'Total', 'Completadas', 'Tasa de Completación']],
           body: reportData.technicians.performance.slice(0, 10).map(t => [
@@ -217,6 +218,71 @@ export default function ReportsPage() {
           ]),
           theme: 'striped',
           headStyles: { fillColor: [0, 0, 0] }
+        })
+      }
+    } else if (activeReport === 'ivu' && reportData) {
+      // IVU Report
+      doc.setFontSize(14)
+      doc.text('Reporte de IVU - Impuesto sobre Ventas y Uso', 14, yPosition)
+      yPosition += 8
+
+      doc.setFontSize(10)
+      doc.text(`Empresa: ${reportData.company?.name || ''}`, 14, yPosition)
+      yPosition += 6
+      if (reportData.company?.taxId) {
+        doc.text(`ID Contributivo: ${reportData.company.taxId}`, 14, yPosition)
+        yPosition += 6
+      }
+      doc.text(`Tasa IVU: ${reportData.company?.taxRate || 11.5}%`, 14, yPosition)
+      yPosition += 10
+
+      doc.setFontSize(12)
+      doc.text('Resumen', 14, yPosition)
+      yPosition += 8
+
+      doc.setFontSize(10)
+      doc.text(`Subtotal: ${formatCurrency(reportData.summary?.totalSubtotal || 0)}`, 14, yPosition)
+      yPosition += 6
+      doc.text(`Descuentos: ${formatCurrency(reportData.summary?.totalDiscount || 0)}`, 14, yPosition)
+      yPosition += 6
+      doc.text(`IVU Cobrado: ${formatCurrency(reportData.summary?.totalTax || 0)}`, 14, yPosition)
+      yPosition += 6
+      doc.text(`Total con IVU: ${formatCurrency(reportData.summary?.totalAmount || 0)}`, 14, yPosition)
+      yPosition += 6
+      doc.text(`Facturas Pagadas: ${reportData.summary?.invoiceCount || 0}`, 14, yPosition)
+      yPosition += 12
+
+      if (reportData.invoices?.length > 0) {
+        autoTable(doc, {
+          startY: yPosition,
+          head: [['Factura', 'Cliente', 'Fecha Pago', 'Subtotal', 'Desc.', 'IVU', 'Total']],
+          body: [
+            ...reportData.invoices.map(inv => [
+              inv.number,
+              inv.client,
+              new Date(inv.paidAt).toLocaleDateString('es-PR'),
+              formatCurrency(inv.subtotal),
+              formatCurrency(inv.discount),
+              formatCurrency(inv.tax),
+              formatCurrency(inv.total)
+            ]),
+            [
+              { content: 'TOTALES', colSpan: 3, styles: { fontStyle: 'bold', halign: 'right' } },
+              formatCurrency(reportData.summary?.totalSubtotal || 0),
+              formatCurrency(reportData.summary?.totalDiscount || 0),
+              formatCurrency(reportData.summary?.totalTax || 0),
+              formatCurrency(reportData.summary?.totalAmount || 0)
+            ]
+          ],
+          theme: 'striped',
+          headStyles: { fillColor: [0, 0, 0] },
+          bodyStyles: { fontSize: 8 },
+          columnStyles: {
+            3: { halign: 'right' },
+            4: { halign: 'right' },
+            5: { halign: 'right' },
+            6: { halign: 'right' }
+          }
         })
       }
     }
@@ -790,6 +856,107 @@ export default function ReportsPage() {
     )
   }
 
+  const renderIvuReport = () => {
+    if (!reportData) return null
+
+    return (
+      <div className="space-y-6">
+        {/* IVU Info Banner */}
+        <div className="bg-gray-900 text-white p-4 rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🧾</span>
+            <div>
+              <p className="font-semibold">Tasa de IVU: {reportData.company?.taxRate || 11.5}%</p>
+              <p className="text-sm text-gray-300">{reportData.company?.name}</p>
+            </div>
+          </div>
+          {reportData.company?.taxId && (
+            <div className="text-sm">
+              <span className="text-gray-400">ID Contributivo: </span>
+              <span className="font-mono font-medium">{reportData.company.taxId}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-lg border">
+            <p className="text-sm text-gray-600">Subtotal</p>
+            <p className="text-2xl font-bold">{formatCurrency(reportData.summary?.totalSubtotal || 0)}</p>
+            <p className="text-sm text-gray-500">Antes de IVU</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg border">
+            <p className="text-sm text-gray-600">IVU Cobrado</p>
+            <p className="text-2xl font-bold text-blue-600">{formatCurrency(reportData.summary?.totalTax || 0)}</p>
+            <p className="text-sm text-gray-500">Impuesto recaudado</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg border">
+            <p className="text-sm text-gray-600">Total con IVU</p>
+            <p className="text-2xl font-bold">{formatCurrency(reportData.summary?.totalAmount || 0)}</p>
+            <p className="text-sm text-gray-500">Monto total cobrado</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg border">
+            <p className="text-sm text-gray-600">Facturas Pagadas</p>
+            <p className="text-2xl font-bold">{reportData.summary?.invoiceCount || 0}</p>
+            <p className="text-sm text-gray-500">En este período</p>
+          </div>
+        </div>
+
+        {/* Invoices Table */}
+        {reportData.invoices?.length > 0 ? (
+          <div className="bg-white rounded-lg border">
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-semibold">Detalle de Facturas Pagadas</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Factura</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Fecha Pago</th>
+                    <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+                    <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Descuento</th>
+                    <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">IVU</th>
+                    <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {reportData.invoices.map((invoice) => (
+                    <tr key={invoice.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm font-medium">{invoice.number}</td>
+                      <td className="px-6 py-4 text-sm">{invoice.client}</td>
+                      <td className="px-6 py-4 text-sm">{new Date(invoice.paidAt).toLocaleDateString('es-PR')}</td>
+                      <td className="px-6 py-4 text-sm text-right">{formatCurrency(invoice.subtotal)}</td>
+                      <td className="px-6 py-4 text-sm text-right">{formatCurrency(invoice.discount)}</td>
+                      <td className="px-6 py-4 text-sm text-right text-blue-600">{formatCurrency(invoice.tax)}</td>
+                      <td className="px-6 py-4 text-sm text-right font-medium">{formatCurrency(invoice.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 bg-gray-50 font-semibold">
+                    <td className="px-6 py-4 text-sm" colSpan={3}>TOTALES</td>
+                    <td className="px-6 py-4 text-sm text-right">{formatCurrency(reportData.summary?.totalSubtotal || 0)}</td>
+                    <td className="px-6 py-4 text-sm text-right">{formatCurrency(reportData.summary?.totalDiscount || 0)}</td>
+                    <td className="px-6 py-4 text-sm text-right text-blue-600">{formatCurrency(reportData.summary?.totalTax || 0)}</td>
+                    <td className="px-6 py-4 text-sm text-right">{formatCurrency(reportData.summary?.totalAmount || 0)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border p-12 text-center">
+            <span className="text-4xl mb-4 block">📭</span>
+            <h3 className="text-lg font-semibold text-gray-700">No hay facturas pagadas en este período</h3>
+            <p className="text-sm text-gray-500 mt-1">Ajusta el rango de fechas para ver resultados</p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -906,6 +1073,7 @@ export default function ReportsPage() {
           {activeReport === 'financial' && renderFinancialReport()}
           {activeReport === 'inventory' && renderInventoryReport()}
           {activeReport === 'services' && renderServicesReport()}
+          {activeReport === 'ivu' && renderIvuReport()}
         </div>
       )}
     </div>
