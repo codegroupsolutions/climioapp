@@ -19,7 +19,7 @@ export async function GET(request) {
     const type = searchParams.get("type");
     const technicianId = searchParams.get("technicianId");
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const limit = parseInt(searchParams.get("limit") || "10000");
     const skip = (page - 1) * limit;
 
     // Build filters

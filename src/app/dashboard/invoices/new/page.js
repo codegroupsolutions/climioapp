@@ -45,8 +45,8 @@ export default function NewInvoicePage() {
   }, [quoteId])
 
   const fetchClients = async () => {
+    const response = await fetch('/api/clients')
     try {
-      const response = await fetch('/api/clients?limit=100')
       const data = await response.json()
       if (response.ok) {
         // Ordenar clientes alfabéticamente por nombre mostrado

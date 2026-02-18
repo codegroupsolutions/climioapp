@@ -29,7 +29,7 @@ export default function NewServiceContractPage() {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch('/api/clients?limit=100')
+      const response = await fetch('/api/clients')
       const data = await response.json()
       if (response.ok) {
         // Ordenar clientes alfabéticamente por nombre mostrado

@@ -49,22 +49,11 @@ export default function NewAppointmentPage() {
 
   const fetchClients = async () => {
     try {
-      let allClients = [];
-      let page = 1;
-      let hasMore = true;
-      const limit = 100; // Tamaño de página para las peticiones
+      const response = await fetch('/api/clients');
+      if (!response.ok) throw new Error("Error al cargar clientes");
+      const data = await response.json();
 
-      while (hasMore) {
-        const response = await fetch(`/api/clients?page=${page}&limit=${limit}`);
-        if (!response.ok) throw new Error("Error al cargar clientes");
-        const data = await response.json();
-        
-        allClients = [...allClients, ...(data.clients || [])];
-        
-        // Verificar si hay más páginas
-        hasMore = page < data.pagination.totalPages;
-        page++;
-      }
+      const allClients = (data.clients || []);
 
       // Ordenar clientes alfabéticamente por nombre mostrado
       allClients.sort((a, b) => {

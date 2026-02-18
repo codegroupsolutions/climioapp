@@ -255,12 +255,11 @@ export default function ReportsPage() {
       if (reportData.invoices?.length > 0) {
         autoTable(doc, {
           startY: yPosition,
-          head: [['Factura', 'Cliente', 'Fecha Pago', 'Subtotal', 'Desc.', 'IVU', 'Total']],
+          head: [['Factura', 'Cliente', 'Subtotal', 'Desc.', 'IVU', 'Total']],
           body: [
             ...reportData.invoices.map(inv => [
               inv.number,
               inv.client,
-              new Date(inv.paidAt).toLocaleDateString('es-PR'),
               formatCurrency(inv.subtotal),
               formatCurrency(inv.discount),
               formatCurrency(inv.tax),
@@ -914,7 +913,6 @@ export default function ReportsPage() {
                   <tr className="border-b">
                     <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Factura</th>
                     <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Fecha Pago</th>
                     <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Subtotal</th>
                     <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Descuento</th>
                     <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">IVU</th>
@@ -926,7 +924,6 @@ export default function ReportsPage() {
                     <tr key={invoice.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium">{invoice.number}</td>
                       <td className="px-6 py-4 text-sm">{invoice.client}</td>
-                      <td className="px-6 py-4 text-sm">{new Date(invoice.paidAt).toLocaleDateString('es-PR')}</td>
                       <td className="px-6 py-4 text-sm text-right">{formatCurrency(invoice.subtotal)}</td>
                       <td className="px-6 py-4 text-sm text-right">{formatCurrency(invoice.discount)}</td>
                       <td className="px-6 py-4 text-sm text-right text-blue-600">{formatCurrency(invoice.tax)}</td>
@@ -936,7 +933,7 @@ export default function ReportsPage() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 bg-gray-50 font-semibold">
-                    <td className="px-6 py-4 text-sm" colSpan={3}>TOTALES</td>
+                    <td className="px-6 py-4 text-sm" colSpan={2}>TOTALES</td>
                     <td className="px-6 py-4 text-sm text-right">{formatCurrency(reportData.summary?.totalSubtotal || 0)}</td>
                     <td className="px-6 py-4 text-sm text-right">{formatCurrency(reportData.summary?.totalDiscount || 0)}</td>
                     <td className="px-6 py-4 text-sm text-right text-blue-600">{formatCurrency(reportData.summary?.totalTax || 0)}</td>
