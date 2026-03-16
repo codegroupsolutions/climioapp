@@ -65,16 +65,21 @@ export async function PUT(request) {
 
     const body = await request.json();
 
+    // Get current user data from database to compare email
+    const currentUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { email: true }
+    });
+
     // Build update data
     const updateData = {};
 
     if (body.firstName) updateData.firstName = body.firstName;
     if (body.lastName) updateData.lastName = body.lastName;
     if (body.phone !== undefined) updateData.phone = body.phone || null;
-    if (body.email) updateData.email = body.email;
 
-    // Check if email is already taken by another user
-    if (body.email && body.email !== user.email) {
+    // Only validate and update email if it actually changed
+    if (body.email && body.email !== currentUser.email) {
       const existingUser = await prisma.user.findUnique({
         where: {
           email: body.email
@@ -87,6 +92,8 @@ export async function PUT(request) {
           { status: 400 }
         );
       }
+
+      updateData.email = body.email;
     }
 
     const updatedUser = await prisma.user.update({

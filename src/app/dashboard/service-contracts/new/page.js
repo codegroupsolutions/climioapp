@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FaArrowLeft } from 'react-icons/fa'
+import SearchableSelect from '@/components/ui/SearchableSelect'
 
 export default function NewServiceContractPage() {
   const router = useRouter()
@@ -138,20 +139,20 @@ export default function NewServiceContractPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Cliente *
               </label>
-              <select
+              <SearchableSelect
+                name="clientId"
                 value={formData.clientId}
                 onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
+                options={clients}
+                placeholder="Seleccione un cliente"
+                searchPlaceholder="Buscar cliente..."
+                noResultsText="No se encontraron clientes"
                 required
-              >
-                <option value="">Seleccione un cliente</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.companyName || `${client.firstName} ${client.lastName}`}
-                    {client.phone && ` - ${client.phone}`}
-                  </option>
-                ))}
-              </select>
+                getOptionValue={(client) => client.id}
+                getOptionLabel={(client) =>
+                  `${client.companyName || `${client.firstName} ${client.lastName}`}${client.phone ? ` - ${client.phone}` : ''}`
+                }
+              />
             </div>
           </div>
 

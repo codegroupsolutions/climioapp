@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import { prepareDateForInput, fromDatetimeLocalString } from "@/utils/dateUtils";
 
 export default function NewAppointmentPage() {
@@ -173,7 +174,8 @@ export default function NewAppointmentPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Cliente *
               </label>
-              <select
+              <SearchableSelect
+                  name="clientId"
                   value={appointment.clientId}
                   onChange={(e) => {
                     const client = clients.find(c => c.id === e.target.value);
@@ -183,16 +185,16 @@ export default function NewAppointmentPage() {
                       location: client ? (client?.address + ' ' + client?.city + ' ' + client?.state + ' ' + client?.zipCode) || "" : "",
                     }));
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  options={clients}
+                  placeholder="Seleccionar cliente"
+                  searchPlaceholder="Buscar cliente..."
+                  noResultsText="No se encontraron clientes"
                   required
-              >
-                <option value="">Seleccionar cliente</option>
-                {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.companyName || `${client.firstName} ${client.lastName}`}
-                    </option>
-                ))}
-              </select>
+                  getOptionValue={(client) => client.id}
+                  getOptionLabel={(client) =>
+                    client.companyName || `${client.firstName} ${client.lastName}`
+                  }
+              />
             </div>
 
             <div>
