@@ -38,18 +38,6 @@ export async function GET(request) {
       ...(type && { type }),
     };
 
-    // If technicianId is provided (for TECHNICIAN role), filter clients by assigned appointments
-    if (technicianId) {
-      where = {
-        ...where,
-        appointments: {
-          some: {
-            technicianId: technicianId
-          }
-        }
-      };
-    }
-
     // Get clients with pagination
     const [clients, total] = await Promise.all([
       prisma.client.findMany({
